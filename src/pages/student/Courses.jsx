@@ -1,526 +1,357 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import Modal from '../../components/Modal';
-import ProgressBar from '../../components/ProgressBar';
 import ChatbotPanel from '../../components/ChatbotPanel';
-import { BookOpen, Lock, CheckCircle, Play, MessageCircle, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, CheckCircle, Circle, Play, Lock, Sparkles, MessageCircle, Clock, Award, ArrowLeft } from 'lucide-react';
+import { courseData } from '../../data/courseData';
 
 const Courses = () => {
   const { appData, currentUser, updateStudent } = useApp();
+  const [view, setView] = useState('courses'); // courses | lessons | subtopics | content
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedTopic, setSelectedTopic] = useState(null);
-  const [showTopicModal, setShowTopicModal] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [selectedSubtopic, setSelectedSubtopic] = useState(null);
+  const [quizMode, setQuizMode] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [chatbotContext, setChatbotContext] = useState(null);
-  const [answers, setAnswers] = useState({});
-  const [showResults, setShowResults] = useState(false);
-
-  const handleQuizCompletion = (quizResult) => {
-    // Update student progress with AI quiz results
-    const updatedStudent = {
-      ...student,
-      xp: student.xp + Math.floor(quizResult.score / 10), // Award XP based on score
-      completedTopics: quizResult.score >= 70 && !student.completedTopics.includes(quizResult.topic?.toLowerCase())
-        ? [...student.completedTopics, quizResult.topic.toLowerCase()]
-        : student.completedTopics
-    };
-
-    updateStudent(student.id, updatedStudent);
-  };
-
-  const student = appData.students.find(s => s.id === currentUser?.id) || appData.students[0];
-  const isYoungStudent = student.age <= 10; // Foundation mode for ages 5-10
-  
-  // Determine student level based on class
-  const getStudentLevel = (classValue) => {
-    const classNum = parseInt(classValue);
-    if (classNum >= 1 && classNum <= 5) return 'foundation';
-    if (classNum >= 6 && classNum <= 8) return 'growth';
-    return 'mastery'; // Classes 9-12
-  };
-  
-  const studentLevel = getStudentLevel(student.class);
-  
-  // Filter courses based on student's selected subjects AND appropriate level
-  const courses = appData.courses.filter(course => {
-    // First check if level matches
-    if (course.level !== studentLevel) return false;
-    
-    // Then check if any of the student's subjects match this course's subject
-    const matches = student.subjects.some(studentSubject => {
-      const courseSubj = course.subject.toLowerCase().trim();
-      const studentSubj = studentSubject.toLowerCase().trim();
-      
-      // Direct exact match: "Mathematics" === "Mathematics"
-      if (courseSubj === studentSubj) return true;
-      
-      // Handle Science subjects: "Physics" should match "Science (Physics)"
-      if (courseSubj.includes(`(${studentSubj})`)) return true;
-      
-      // Handle subject with level suffix: "Mathematics" matches "Mathematics - Primary"
-      // But only if it's the same base subject
-      if (courseSubj.startsWith(studentSubj + ' -') || courseSubj.startsWith(studentSubj + '-')) return true;
-      
-      return false;
-    });
-    
-    return matches;
+  const [completedSubtopics, setCompletedSubtopics] = useState(() => {
+    const saved = localStorage.getItem('learnsync-completed-subtopics');
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const handleTopicClick = (topic) => {
-    setSelectedTopic(topic);
-    setShowTopicModal(true);
-    setAnswers({});
-    setShowResults(false);
-  };
+  const student = appData.students.find(s => s.id === currentUser?.id) || appData.students[0];
+  const level = student?.level || 'foundation';
+  const courses = courseData[level] || courseData.foundation;
 
-  const handleSendToChatbot = () => {
-    setChatbotContext({
-      title: selectedTopic.name,
-      content: selectedTopic.content
-    });
-    setShowChatbot(true);
-  };
-
-  const handleSubmitQuiz = () => {
-    const correctAnswers = selectedTopic.questions.filter(q => answers[q.id] === q.correct).length;
-    const totalQuestions = selectedTopic.questions.length;
-    const score = (correctAnswers / totalQuestions) * 100;
-
-    // Update student progress
-    const updatedStudent = {
-      ...student,
-      xp: student.xp + selectedTopic.xpReward,
-      completedTopics: [...student.completedTopics, selectedTopic.name.toLowerCase()]
-    };
-
-    // Update weak topics based on performance
-    if (score < 60) {
-      const subject = courses.find(c => c.chapters.some(ch => 
-        appData.chapters.find(chapter => chapter.id === ch)?.topics.includes(selectedTopic.id)
-      ))?.subject;
-      
-      if (subject && !student.weakTopics[subject]?.includes(selectedTopic.name.toLowerCase())) {
-        updatedStudent.weakTopics = {
-          ...student.weakTopics,
-          [subject]: [...(student.weakTopics[subject] || []), selectedTopic.name.toLowerCase()]
-        };
-      }
+  const markComplete = (subtopicId) => {
+    if (!completedSubtopics.includes(subtopicId)) {
+      const updated = [...completedSubtopics, subtopicId];
+      setCompletedSubtopics(updated);
+      localStorage.setItem('learnsync-completed-subtopics', JSON.stringify(updated));
     }
-
-    updateStudent(student.id, updatedStudent);
-    setShowResults(true);
   };
 
-  return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header - Gamified for young students */}
-      {isYoungStudent ? (
-        <div className="text-center bg-gradient-to-r from-purple-100 via-pink-100 to-yellow-100 rounded-3xl p-4 md:p-6">
-          <div className="text-5xl md:text-6xl mb-2">📚</div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">My Adventures!</h1>
-          <p className="text-base md:text-lg text-purple-600 font-semibold mt-1">Choose your quest</p>
-        </div>
-      ) : (
+  const handleQuizCompletion = (quizResult) => {
+    if (quizResult?.topic) {
+      markComplete(`quiz-${selectedLesson?.id}`);
+    }
+  };
+
+  const openCourse = (course) => { setSelectedCourse(course); setView('lessons'); };
+  const openLesson = (lesson) => { setSelectedLesson(lesson); setView('subtopics'); setQuizMode(false); setQuizSubmitted(false); setQuizAnswers({}); };
+  const openSubtopic = (subtopic) => { setSelectedSubtopic(subtopic); setView('content'); };
+
+  const goBack = () => {
+    if (view === 'content') setView('subtopics');
+    else if (view === 'subtopics') { setView('lessons'); setQuizMode(false); }
+    else if (view === 'lessons') { setView('courses'); setSelectedCourse(null); }
+  };
+
+  const startQuiz = () => { setQuizMode(true); setQuizAnswers({}); setQuizSubmitted(false); };
+
+  const submitQuiz = () => {
+    setQuizSubmitted(true);
+    markComplete(`quiz-${selectedLesson.id}`);
+  };
+
+  const getQuizScore = () => {
+    if (!selectedLesson?.quiz) return { correct: 0, total: 0 };
+    const qs = selectedLesson.quiz.questions;
+    const correct = qs.filter((q, i) => quizAnswers[i] === q.ans).length;
+    return { correct, total: qs.length, percent: Math.round((correct / qs.length) * 100) };
+  };
+
+  const getCourseProgress = (course) => {
+    const total = course.lessons.reduce((sum, l) => sum + l.subtopics.length + 1, 0); // +1 for quiz
+    const done = course.lessons.reduce((sum, l) => {
+      const subtopicsDone = l.subtopics.filter(s => completedSubtopics.includes(s.id)).length;
+      const quizDone = completedSubtopics.includes(`quiz-${l.id}`) ? 1 : 0;
+      return sum + subtopicsDone + quizDone;
+    }, 0);
+    return total > 0 ? Math.round((done / total) * 100) : 0;
+  };
+
+  // ─── COURSE LIST VIEW ───
+  if (view === 'courses') {
+    return (
+      <div className="space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">My Courses</h1>
-          <p className="text-gray-500 mt-1 text-sm md:text-base">Continue your learning journey</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Courses</h1>
+          <p className="text-gray-500 mt-1">
+            {level === 'foundation' ? 'Foundation Level (Class 1-5)' : level === 'growth' ? 'Growth Level (Class 6-8)' : 'Mastery Level (Class 9-12)'}
+          </p>
         </div>
-      )}
 
-      {!selectedCourse ? (
-        <>
-          {courses.length === 0 ? (
-            <Card>
-              <div className="text-center py-8">
-                <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Courses Available</h3>
-                <p className="text-gray-500">
-                  Courses for your selected subjects will appear here once they're created.
-                </p>
-              </div>
-            </Card>
-          ) : isYoungStudent ? (
-            // Gamified course cards for young students
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {courses.map((course, index) => {
-                const chapters = appData.chapters.filter(ch => course.chapters.includes(ch.id));
-                const totalTopics = chapters.reduce((sum, ch) => sum + ch.topics.length, 0);
-                const completedTopics = student.completedTopics.length;
-                const progress = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
-
-                const colors = [
-                  { bg: 'from-pink-200 to-purple-200', border: 'border-pink-400', button: 'bg-pink-400 hover:bg-pink-500', emoji: '🎨' },
-                  { bg: 'from-blue-200 to-cyan-200', border: 'border-blue-400', button: 'bg-blue-400 hover:bg-blue-500', emoji: '🔢' },
-                  { bg: 'from-green-200 to-yellow-200', border: 'border-green-400', button: 'bg-green-400 hover:bg-green-500', emoji: '🌍' },
-                  { bg: 'from-orange-200 to-red-200', border: 'border-orange-400', button: 'bg-orange-400 hover:bg-orange-500', emoji: '🔬' },
-                ];
-                const color = colors[index % colors.length];
-
-                return (
-                  <div key={course.id} className={`bg-gradient-to-br ${color.bg} rounded-3xl p-5 md:p-6 border-4 ${color.border} shadow-xl transform hover:scale-102 transition-all cursor-pointer`}
-                    onClick={() => setSelectedCourse(course)}>
-                    <div className="flex items-center gap-3 md:gap-4 mb-4">
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center text-4xl md:text-5xl shadow-lg">
-                        {color.emoji}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-900">{course.name}</h3>
-                        <p className="text-sm md:text-base text-gray-700 font-semibold">{chapters.length} Adventures</p>
-                      </div>
-                    </div>
-                    
-                    {/* Progress bar */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm md:text-base font-bold text-gray-700">Progress</span>
-                        <span className="text-sm md:text-base font-bold text-gray-700">{Math.round(progress)}%</span>
-                      </div>
-                      <div className="w-full bg-white rounded-full h-5 md:h-6 border-2 border-gray-300 shadow-inner">
-                        <div className={`h-full rounded-full bg-gradient-to-r ${color.button} transition-all duration-500`} style={{ width: `${progress}%` }}></div>
-                      </div>
-                    </div>
-
-                    {/* Stars earned */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl md:text-3xl">⭐</span>
-                        <span className="text-base md:text-lg font-bold text-gray-900">{completedTopics * 10} Stars</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl md:text-3xl">🏆</span>
-                        <span className="text-base md:text-lg font-bold text-gray-900">{completedTopics}/{totalTopics}</span>
-                      </div>
-                    </div>
-
-                    <button className={`w-full ${color.button} text-white text-base md:text-lg font-bold py-3 md:py-4 rounded-2xl transition-all transform hover:scale-105 shadow-lg`}>
-                      Start Adventure! 🚀
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            // Regular course cards for older students
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {courses.map((course) => {
-                const chapters = appData.chapters.filter(ch => course.chapters.includes(ch.id));
-                const totalTopics = chapters.reduce((sum, ch) => sum + ch.topics.length, 0);
-                const completedTopics = student.completedTopics.length;
-                const progress = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
-
-                return (
-                  <Card key={course.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-blue-50 rounded-xl">
-                        <BookOpen className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900">{course.name}</h3>
-                    </div>
-                    <ProgressBar progress={progress} className="mb-3" />
-                    <p className="text-gray-500 text-sm mb-4">
-                      {chapters.length} chapters • {totalTopics} topics
-                    </p>
-                    <Button onClick={() => setSelectedCourse(course)} className="w-full">
-                      Continue Learning
-                    </Button>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </>
-      ) : (
-        <div>
-          <Button variant="secondary" onClick={() => setSelectedCourse(null)} className="mb-4">
-            ← Back to {isYoungStudent ? 'Adventures' : 'Courses'}
-          </Button>
-
-          {isYoungStudent ? (
-            // Gamified chapter view for young students
-            <div className="space-y-4 md:space-y-6">
-              <div className="text-center bg-gradient-to-r from-purple-100 to-pink-100 rounded-3xl p-4 md:p-6 border-4 border-purple-300">
-                <div className="text-5xl md:text-6xl mb-2">🗺️</div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedCourse.name}</h2>
-                <p className="text-base md:text-lg text-purple-600 font-semibold mt-1">Your Learning Map</p>
-              </div>
-
-              {appData.chapters
-                .filter(ch => selectedCourse.chapters.includes(ch.id))
-                .sort((a, b) => a.order - b.order)
-                .map((chapter, chapterIndex) => {
-                  const topics = appData.topics.filter(t => chapter.topics.includes(t.id));
-                  const chapterColors = [
-                    { bg: 'from-pink-100 to-purple-100', border: 'border-pink-300', icon: '🎯' },
-                    { bg: 'from-blue-100 to-cyan-100', border: 'border-blue-300', icon: '🌟' },
-                    { bg: 'from-green-100 to-yellow-100', border: 'border-green-300', icon: '🏆' },
-                  ];
-                  const color = chapterColors[chapterIndex % chapterColors.length];
-
-                  return (
-                    <div key={chapter.id} className={`bg-gradient-to-br ${color.bg} rounded-3xl p-4 md:p-6 border-4 ${color.border} shadow-lg`}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="text-4xl md:text-5xl">{color.icon}</div>
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-900">
-                          Level {chapter.order}: {chapter.name}
-                        </h3>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {topics.map((topic, topicIndex) => {
-                          const isCompleted = student.completedTopics.includes(topic.name.toLowerCase());
-                          const isLocked = chapterIndex > 0 && topicIndex > 0 && !isCompleted;
-
-                          return (
-                            <div
-                              key={topic.id}
-                              onClick={() => !isLocked && handleTopicClick(topic)}
-                              className={`flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-2xl border-4 transition-all transform hover:scale-102 ${
-                                isLocked
-                                  ? 'bg-gray-200 border-gray-300 cursor-not-allowed opacity-60'
-                                  : isCompleted
-                                  ? 'bg-green-200 border-green-400 cursor-pointer'
-                                  : 'bg-white border-yellow-400 cursor-pointer hover:shadow-lg'
-                              }`}
-                            >
-                              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl ${
-                                isLocked ? 'bg-gray-300' : isCompleted ? 'bg-green-400' : 'bg-yellow-400'
-                              }`}>
-                                {isLocked ? '🔒' : isCompleted ? '✅' : '⭐'}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-base md:text-lg font-bold text-gray-900">{topic.name}</p>
-                                <p className="text-sm md:text-base font-semibold text-yellow-600">+{topic.xpReward} Stars</p>
-                              </div>
-                              {isCompleted && (
-                                <div className="text-3xl md:text-4xl">🏆</div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          ) : (
-            // Regular chapter view for older students
-            <Card>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">{selectedCourse.name}</h2>
-              
-              {appData.chapters
-                .filter(ch => selectedCourse.chapters.includes(ch.id))
-                .sort((a, b) => a.order - b.order)
-                .map((chapter, chapterIndex) => {
-                  const topics = appData.topics.filter(t => chapter.topics.includes(t.id));
-                  
-                  return (
-                    <div key={chapter.id} className="mb-6">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                        Chapter {chapter.order}: {chapter.name}
-                      </h3>
-                      
-                      <div className="space-y-2">
-                        {topics.map((topic, topicIndex) => {
-                          const isCompleted = student.completedTopics.includes(topic.name.toLowerCase());
-                          const isLocked = chapterIndex > 0 && topicIndex > 0 && !isCompleted;
-
-                          return (
-                            <div
-                              key={topic.id}
-                              onClick={() => !isLocked && handleTopicClick(topic)}
-                              className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
-                                isLocked
-                                  ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                                  : isCompleted
-                                  ? 'border-green-200 bg-green-50 cursor-pointer hover:border-green-300'
-                                  : 'border-blue-200 bg-blue-50 cursor-pointer hover:border-blue-300'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                {isLocked ? (
-                                  <Lock className="w-5 h-5 text-gray-400" />
-                                ) : isCompleted ? (
-                                  <CheckCircle className="w-5 h-5 text-green-600" />
-                                ) : (
-                                  <Play className="w-5 h-5 text-blue-600" />
-                                )}
-                                <div>
-                                  <p className="font-medium text-gray-900">{topic.name}</p>
-                                  <p className="text-sm text-gray-500">{topic.difficulty} • {topic.xpReward} XP</p>
-                                </div>
-                              </div>
-                              {isCompleted && (
-                                <span className="px-3 py-1 bg-green-600 text-white text-sm rounded-full">
-                                  Completed
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Topic Learning Modal */}
-      <Modal
-        isOpen={showTopicModal}
-        onClose={() => setShowTopicModal(false)}
-        title={selectedTopic?.name || ''}
-      >
-        {selectedTopic && (
-          <div className="space-y-6">
-            {/* Send to Chatbot Button */}
-            <div className="flex justify-end">
-              <Button
-                variant="secondary"
-                onClick={handleSendToChatbot}
-                className="flex items-center gap-2"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {courses.map(course => {
+            const progress = getCourseProgress(course);
+            const totalLessons = course.lessons.length;
+            const totalSubtopics = course.lessons.reduce((s, l) => s + l.subtopics.length, 0);
+            return (
+              <div key={course.id} onClick={() => openCourse(course)}
+                className="bg-white rounded-2xl border-2 border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden group"
               >
-                <MessageCircle className="w-4 h-4" />
-                Ask AI About This
-              </Button>
-            </div>
-
-            {/* Content */}
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Explanation</h3>
-              <p className="text-gray-700">{selectedTopic.content}</p>
-            </div>
-
-            {/* Key Points */}
-            {selectedTopic.keyPoints && selectedTopic.keyPoints.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Key Points</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700">
-                  {selectedTopic.keyPoints.map((point, i) => (
-                    <li key={i}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Examples */}
-            {selectedTopic.examples && selectedTopic.examples.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Examples</h3>
-                <div className="space-y-2">
-                  {selectedTopic.examples.map((example, i) => (
-                    <div key={i} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-gray-700">{example}</p>
+                <div className={`bg-gradient-to-r ${course.color} p-5 text-white`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-4xl">{course.icon}</span>
+                      <div>
+                        <h3 className="text-xl font-bold">{course.name}</h3>
+                        <p className="text-white/80 text-sm">{course.description}</p>
+                      </div>
                     </div>
-                  ))}
+                    <ChevronRight className="w-6 h-6 opacity-70 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                    <span>{totalLessons} Lessons • {totalSubtopics} Topics</span>
+                    <span className="font-bold text-gray-900">{progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                    <div className={`bg-gradient-to-r ${course.color} h-2.5 rounded-full transition-all duration-500`} style={{ width: `${progress}%` }} />
+                  </div>
                 </div>
               </div>
-            )}
+            );
+          })}
+        </div>
 
-            {/* Summary */}
-            {selectedTopic.summary && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
-                <p className="text-gray-700 bg-green-50 p-3 rounded-lg border border-green-200">
-                  {selectedTopic.summary}
-                </p>
-              </div>
-            )}
+      </div>
+    );
+  }
 
-            {/* AI Simplify Button */}
-            <Button
-              variant="secondary"
-              className="w-full flex items-center justify-center gap-2"
-              onClick={() => {
-                setChatbotContext({
-                  title: selectedTopic.name,
-                  content: selectedTopic.content
-                });
-                setShowChatbot(true);
-              }}
-            >
-              <Sparkles className="w-4 h-4" />
-              Explain Simply with AI
-            </Button>
+  // ─── LESSONS VIEW ───
+  if (view === 'lessons') {
+    const progress = getCourseProgress(selectedCourse);
+    return (
+      <div className="space-y-6">
+        <button onClick={goBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors font-medium">
+          <ArrowLeft className="w-5 h-5" /> Back to Courses
+        </button>
 
-            {/* Questions */}
+        <div className={`bg-gradient-to-r ${selectedCourse.color} rounded-2xl p-6 text-white`}>
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-5xl">{selectedCourse.icon}</span>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Practice Questions</h3>
-              <div className="space-y-4">
-                {selectedTopic.questions.map((q, index) => (
-                  <div key={q.id} className="p-4 bg-gray-50 rounded-xl">
-                    <p className="font-medium text-gray-900 mb-3">
-                      {index + 1}. {q.question}
-                    </p>
+              <h1 className="text-2xl font-bold">{selectedCourse.name}</h1>
+              <p className="text-white/80">{selectedCourse.description}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 bg-white/20 rounded-full h-3">
+              <div className="bg-white h-3 rounded-full transition-all" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="font-bold text-lg">{progress}%</span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {selectedCourse.lessons.map((lesson, idx) => {
+            const doneSubs = lesson.subtopics.filter(s => completedSubtopics.includes(s.id)).length;
+            const quizDone = completedSubtopics.includes(`quiz-${lesson.id}`);
+            const totalItems = lesson.subtopics.length + 1;
+            const doneItems = doneSubs + (quizDone ? 1 : 0);
+            const lessonProgress = Math.round((doneItems / totalItems) * 100);
+
+            return (
+              <div key={lesson.id} onClick={() => openLesson(lesson)}
+                className="bg-white rounded-xl border-2 border-gray-100 hover:border-blue-200 p-5 cursor-pointer hover:shadow-md transition-all group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${lessonProgress === 100 ? 'bg-green-500' : `bg-gradient-to-br ${selectedCourse.color}`}`}>
+                    {lessonProgress === 100 ? <CheckCircle className="w-6 h-6" /> : idx + 1}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{lesson.title}</h3>
+                    <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                      <span>{lesson.subtopics.length} topics</span>
+                      <span>•</span>
+                      <span>1 quiz</span>
+                      <span>•</span>
+                      <span>{doneSubs + (quizDone ? 1 : 0)}/{totalItems} done</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+                      <div className={`h-1.5 rounded-full transition-all ${lessonProgress === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${lessonProgress}%` }} />
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
+    );
+  }
+
+  // ─── SUBTOPICS + QUIZ VIEW ───
+  if (view === 'subtopics') {
+    return (
+      <div className="space-y-6">
+        <button onClick={goBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors font-medium">
+          <ArrowLeft className="w-5 h-5" /> Back to {selectedCourse.name}
+        </button>
+
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedLesson.title}</h2>
+          <p className="text-gray-500 text-sm">{selectedLesson.subtopics.length} topics + 1 quiz</p>
+        </div>
+
+        {/* Subtopics list */}
+        <div className="space-y-3">
+          {selectedLesson.subtopics.map((subtopic, idx) => {
+            const isDone = completedSubtopics.includes(subtopic.id);
+            return (
+              <div key={subtopic.id} onClick={() => openSubtopic(subtopic)}
+                className={`bg-white rounded-xl border-2 p-4 cursor-pointer hover:shadow-md transition-all flex items-center gap-4 ${isDone ? 'border-green-200 bg-green-50/50' : 'border-gray-100 hover:border-blue-200'}`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isDone ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  {isDone ? <CheckCircle className="w-5 h-5" /> : <span className="font-bold text-sm">{idx + 1}</span>}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900">{subtopic.title}</h4>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
+                    <Clock className="w-3 h-3" /> {subtopic.duration}
+                  </div>
+                </div>
+                {isDone ? (
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Done</span>
+                ) : (
+                  <Play className="w-5 h-5 text-blue-500" />
+                )}
+              </div>
+            );
+          })}
+
+          {/* Quiz Card */}
+          {!quizMode ? (
+            <div onClick={startQuiz}
+              className={`bg-white rounded-xl border-2 p-4 cursor-pointer hover:shadow-md transition-all flex items-center gap-4 ${completedSubtopics.includes(`quiz-${selectedLesson.id}`) ? 'border-green-200 bg-green-50/50' : 'border-purple-200 hover:border-purple-400 bg-purple-50/30'}`}
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${completedSubtopics.includes(`quiz-${selectedLesson.id}`) ? 'bg-green-500 text-white' : 'bg-purple-500 text-white'}`}>
+                <Award className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900">Lesson Quiz</h4>
+                <p className="text-xs text-gray-400">{selectedLesson.quiz.questions.length} questions • Test your understanding</p>
+              </div>
+              {completedSubtopics.includes(`quiz-${selectedLesson.id}`) ? (
+                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Passed ✓</span>
+              ) : (
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-semibold">Take Quiz</span>
+              )}
+            </div>
+          ) : (
+            <Card className="border-2 border-purple-200 bg-purple-50/30">
+              <div className="flex items-center gap-3 mb-5">
+                <Award className="w-6 h-6 text-purple-600" />
+                <h3 className="text-lg font-bold text-gray-900">Lesson Quiz: {selectedLesson.title}</h3>
+              </div>
+              <div className="space-y-5">
+                {selectedLesson.quiz.questions.map((q, qIdx) => (
+                  <div key={qIdx} className="bg-white rounded-xl p-4 border border-gray-100">
+                    <p className="font-semibold text-gray-900 mb-3">{qIdx + 1}. {q.q}</p>
                     <div className="space-y-2">
-                      {q.options.map((option, optIndex) => (
-                        <label
-                          key={optIndex}
-                          className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                            showResults
-                              ? optIndex === q.correct
-                                ? 'border-green-500 bg-green-50'
-                                : answers[q.id] === optIndex
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-200'
-                              : answers[q.id] === optIndex
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`question-${q.id}`}
-                            checked={answers[q.id] === optIndex}
-                            onChange={() => setAnswers({ ...answers, [q.id]: optIndex })}
-                            disabled={showResults}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-gray-700">{option}</span>
-                        </label>
-                      ))}
+                      {q.opts.map((opt, oIdx) => {
+                        let optClass = 'border-gray-200 hover:border-blue-300';
+                        if (quizSubmitted) {
+                          if (oIdx === q.ans) optClass = 'border-green-500 bg-green-50';
+                          else if (quizAnswers[qIdx] === oIdx) optClass = 'border-red-500 bg-red-50';
+                        } else if (quizAnswers[qIdx] === oIdx) {
+                          optClass = 'border-blue-500 bg-blue-50';
+                        }
+                        return (
+                          <label key={oIdx} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${optClass}`}>
+                            <input type="radio" name={`q-${qIdx}`} disabled={quizSubmitted} checked={quizAnswers[qIdx] === oIdx}
+                              onChange={() => setQuizAnswers(prev => ({ ...prev, [qIdx]: oIdx }))} className="w-4 h-4" />
+                            <span className="text-gray-700">{opt}</span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
               </div>
+
+              {!quizSubmitted ? (
+                <Button onClick={submitQuiz} disabled={Object.keys(quizAnswers).length < selectedLesson.quiz.questions.length} className="w-full mt-5">
+                  Submit Quiz
+                </Button>
+              ) : (
+                <div className={`mt-5 p-4 rounded-xl border-2 text-center ${getQuizScore().percent >= 50 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <p className="text-2xl font-bold">{getQuizScore().percent >= 50 ? '🎉' : '📚'}</p>
+                  <p className="font-bold text-lg text-gray-900 mt-1">Score: {getQuizScore().correct}/{getQuizScore().total} ({getQuizScore().percent}%)</p>
+                  <p className="text-sm text-gray-500 mt-1">{getQuizScore().percent >= 50 ? 'Great work! You passed!' : 'Review the topics and try again.'}</p>
+                  <button onClick={() => { setQuizMode(false); setQuizSubmitted(false); setQuizAnswers({}); }} className="mt-3 text-sm text-blue-600 hover:underline font-medium">Close Quiz</button>
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+
+      </div>
+    );
+  }
+
+  // ─── CONTENT VIEW ───
+  if (view === 'content') {
+    const isDone = completedSubtopics.includes(selectedSubtopic.id);
+    return (
+      <div className="space-y-6">
+        <button onClick={goBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors font-medium">
+          <ArrowLeft className="w-5 h-5" /> Back to {selectedLesson.title}
+        </button>
+
+        <Card className="border-2 border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">{selectedCourse.name}</span>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <span className="text-gray-500">{selectedLesson.title}</span>
             </div>
-
-            {!showResults ? (
-              <Button
-                onClick={handleSubmitQuiz}
-                disabled={Object.keys(answers).length !== selectedTopic.questions.length}
-                className="w-full"
-              >
-                Submit Answers
-              </Button>
-            ) : (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <p className="text-blue-900 font-semibold">
-                  Score: {selectedTopic.questions.filter(q => answers[q.id] === q.correct).length} / {selectedTopic.questions.length}
-                </p>
-                <p className="text-blue-700 text-sm mt-1">
-                  You earned {selectedTopic.xpReward} XP!
-                </p>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Clock className="w-4 h-4" /> {selectedSubtopic.duration}
+            </div>
           </div>
-        )}
-      </Modal>
 
-      {/* Chatbot Panel */}
-      <ChatbotPanel
-        isOpen={showChatbot}
-        onClose={() => setShowChatbot(false)}
-        context={chatbotContext}
-        onQuizGenerated={handleQuizCompletion}
-        studentId={student.id}
-      />
-    </div>
-  );
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">{selectedSubtopic.title}</h1>
+
+          <div className="prose max-w-none">
+            <div className="bg-blue-50 rounded-xl p-5 border border-blue-100 mb-6">
+              <p className="text-gray-800 text-lg leading-relaxed">{selectedSubtopic.content}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            {!isDone && (
+              <Button onClick={() => markComplete(selectedSubtopic.id)} className="flex-1 flex items-center justify-center gap-2">
+                <CheckCircle className="w-5 h-5" /> Mark as Complete
+              </Button>
+            )}
+            <Button variant="secondary" onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-ai-drawer', { detail: { title: selectedSubtopic.title, content: selectedSubtopic.content } }));
+            }} className="flex-1 flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5" /> Ask AI About This
+            </Button>
+          </div>
+
+          {isDone && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center">
+              <p className="text-green-700 font-semibold">✅ You've completed this topic!</p>
+            </div>
+          )}
+        </Card>
+
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default Courses;

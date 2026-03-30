@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Home, BookOpen, Users, Calendar, HelpCircle, Bell, GraduationCap, Menu, X, LogOut, User, Sparkles } from 'lucide-react';
@@ -8,6 +8,17 @@ const Layout = ({ children, onLogout }) => {
   const { currentRole, currentUser, updateStudent } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [showChatbot, setShowChatbot] = useState(false);
+  const [chatbotContext, setChatbotContext] = useState(null);
+
+  // Listen for 'open-ai-drawer' events from Courses to open chatbot with context
+  useEffect(() => {
+    const handler = (e) => {
+      setChatbotContext(e.detail);
+      setShowChatbot(true);
+    };
+    window.addEventListener('open-ai-drawer', handler);
+    return () => window.removeEventListener('open-ai-drawer', handler);
+  }, []);
   const location = useLocation();
 
   const handleLogout = () => {
@@ -158,6 +169,7 @@ const Layout = ({ children, onLogout }) => {
           {currentRole === 'student' && showChatbot ? (
             <ChatbotPanel
               isOpen={showChatbot}
+              context={chatbotContext}
               onQuizGenerated={handleQuizCompletion}
               studentId={currentUser?.id}
             />
