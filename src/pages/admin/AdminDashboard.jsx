@@ -105,23 +105,32 @@ const AdminDashboard = () => {
   const { appData } = useApp();
   const [modal, setModal] = useState(null); // 'highRisk' | 'lowMentors' | 'declining'
 
-  // ── Stats ──────────────────────────────────────────────────────────────
-  const totalStudents = appData.students.length;
-  const activeMentors = appData.mentors.filter(m => m.onboarded).length;
-  const avgProgress = totalStudents > 0
-    ? Math.round(appData.students.reduce((s, st) => s + (st.progress || 0), 0) / totalStudents)
+  // Filter out demo users (those with IDs like 'student_1', 'mentor_1', etc.)
+  const realStudents = appData.students.filter(s => !s.id.match(/^student_\d+$/))
+  const realMentors = appData.mentors.filter(m => !m.id.match(/^mentor_\d+$/))
+
+  // Calculate stats from real data
+  const totalStudents = realStudents.length;
+  const activeMentors = realMentors.filter(m => m.onboarded).length;
+  const totalSessions = appData.sessions.length;
+  
+  // Calculate average progress
+  const avgProgress = totalStudents > 0 
+    ? Math.round(realStudents.reduce((sum, s) => sum + (s.progress || 0), 0) / totalStudents)
     : 0;
   const avgAttendance = totalStudents > 0
-    ? Math.round(appData.students.reduce((s, st) => s + (st.attendance || 0), 0) / totalStudents)
+    ? Math.round(realStudents.reduce((sum, s) => sum + (s.attendance || 0), 0) / totalStudents)
     : 0;
 
-  // ── Alert data — use richer admin-level mockStudents/mockMentors ─────────
-  const highRiskStudents = mockStudents.filter(s => s.status === 'at-risk');
-  const lowPerformingMentors = mockMentors.filter(m => m.status === 'low-performing');
-  const decliningSubjects = [
-    { subject: 'English', trend: '-8%', avgScore: 42, studentsAffected: 3, reason: 'Comprehension & writing scores declining' },
-    { subject: 'Science', trend: '-5%', avgScore: 51, studentsAffected: 2, reason: 'Lab sessions missed, photosynthesis unit weak' },
-  ];
+  // High-risk students (progress < 50 or attendance < 70)
+  const highRiskStudents = realStudents.filter(s => 
+    (s.progress || 0) < 50 || (s.attendance || 0) < 70
+  ).length;
+
+  // Low-performing mentors (avgImprovement < 15)
+  const lowPerformingMentors = realMentors.filter(m => 
+    (m.avgImprovement || 0) < 15
+  ).length;
 
   // ── Chart data ──────────────────────────────────────────────────────────
   const weeklyProgressData = [
