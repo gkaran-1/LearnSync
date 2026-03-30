@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentOnboarding from './pages/student/StudentOnboarding';
@@ -17,8 +18,9 @@ import MentorSessions from './pages/mentor/MentorSessions';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Modules from './pages/admin/Modules';
 import Sessions from './pages/admin/Sessions';
-import AIInsights from './pages/admin/AIInsights';
-import Feedback from './pages/admin/Feedback';
+import AdminStudents from './pages/admin/AdminStudents';
+import AdminMentors from './pages/admin/AdminMentors';
+import AdminNotifications from './pages/admin/AdminNotifications';
 
 const AppRoutes = () => {
   const { currentRole, currentUser, updateCurrentUser, switchRole } = useApp();
@@ -26,10 +28,8 @@ const AppRoutes = () => {
   const handleLogin = (user, role) => {
     switchRole(role);
     if (user.id === 'new') {
-      // New user - will go to onboarding with empty user
       updateCurrentUser({ id: 'new', onboarded: false });
     } else {
-      // Existing user - go to dashboard
       updateCurrentUser(user);
     }
   };
@@ -38,9 +38,15 @@ const AppRoutes = () => {
     updateCurrentUser(user);
   };
 
-  // If no user is logged in, show login page
+  // If no user is logged in, show landing page
   if (!currentUser) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
   // If student is not onboarded, show student onboarding
@@ -86,8 +92,9 @@ const AppRoutes = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/modules" element={<Modules />} />
             <Route path="/admin/sessions" element={<Sessions />} />
-            <Route path="/admin/insights" element={<AIInsights />} />
-            <Route path="/admin/feedback" element={<Feedback />} />
+            <Route path="/admin/students" element={<AdminStudents />} />
+            <Route path="/admin/mentors" element={<AdminMentors />} />
+            <Route path="/admin/notifications" element={<AdminNotifications />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </>
         )}

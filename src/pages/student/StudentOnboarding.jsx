@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { Mic, Brain, Plus, X } from 'lucide-react';
+import { Brain, Plus, X } from 'lucide-react';
 import { allocateMentor } from '../../utils/mentorAllocation';
 
 const StudentOnboarding = ({ onComplete }) => {
@@ -13,16 +13,45 @@ const StudentOnboarding = ({ onComplete }) => {
     age: '',
     class: '',
     subjects: [],
-    availability: [],
     skillAssessment: {},
     quizAnswers: {}
   });
   const [newSubject, setNewSubject] = useState('');
-  const [newTopic, setNewTopic] = useState('');
-  const [selectedSubjectForTopics, setSelectedSubjectForTopics] = useState('');
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const timeSlots = ['4PM', '5PM', '6PM', '7PM', '8PM'];
+  // Get subjects based on class
+  const getSubjectsByClass = (classValue) => {
+    const classNum = parseInt(classValue);
+    
+    if (classNum >= 1 && classNum <= 5) {
+      // Primary School (Classes 1-5)
+      return {
+        core: ['English', 'Mathematics', 'Environmental Studies (EVS)'],
+        additional: ['Second Language', 'General Knowledge', 'Computer Basics', 'Moral Science', 'Art & Craft', 'Physical Education']
+      };
+    } else if (classNum >= 6 && classNum <= 8) {
+      // Middle School (Classes 6-8)
+      return {
+        core: ['English', 'Mathematics', 'Science', 'Social Studies'],
+        additional: ['Second Language', 'Third Language', 'Computer Science', 'General Knowledge', 'Art/Music/Dance', 'Physical Education']
+      };
+    } else if (classNum >= 9 && classNum <= 10) {
+      // Secondary School (Classes 9-10)
+      return {
+        core: ['English', 'Mathematics', 'Science (Physics)', 'Science (Chemistry)', 'Science (Biology)', 'Social Science (History)', 'Social Science (Geography)', 'Social Science (Civics)', 'Social Science (Economics)'],
+        additional: ['Second Language', 'Computer Science/IT', 'Physical Education', 'Art/Vocational']
+      };
+    } else if (classNum >= 11 && classNum <= 12) {
+      // Higher Secondary (Classes 11-12)
+      return {
+        core: ['English'],
+        additional: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Computer Science', 'Accountancy', 'Business Studies', 'Economics', 'History', 'Political Science', 'Geography', 'Psychology', 'Sociology', 'Physical Education']
+      };
+    }
+    
+    return { core: [], additional: [] };
+  };
+
+  const availableSubjects = formData.class ? getSubjectsByClass(formData.class) : { core: [], additional: [] };
 
   // Dynamic quiz questions generator - 6 questions (2 easy, 2 medium, 2 hard)
   const generateQuizQuestions = (subject) => {
@@ -108,48 +137,6 @@ const StudentOnboarding = ({ onComplete }) => {
     });
   };
 
-  const handleAddTopic = (subject) => {
-    if (newTopic.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        skillAssessment: {
-          ...prev.skillAssessment,
-          [subject]: {
-            ...prev.skillAssessment[subject],
-            [newTopic.trim()]: 'okay'
-          }
-        }
-      }));
-      setNewTopic('');
-      setSelectedSubjectForTopics('');
-    }
-  };
-
-  const handleRemoveTopic = (subject, topic) => {
-    setFormData(prev => {
-      const newSubjectTopics = { ...prev.skillAssessment[subject] };
-      delete newSubjectTopics[topic];
-      
-      return {
-        ...prev,
-        skillAssessment: {
-          ...prev.skillAssessment,
-          [subject]: newSubjectTopics
-        }
-      };
-    });
-  };
-
-  const handleAvailabilityToggle = (day, time) => {
-    const slot = `${day} ${time}`;
-    setFormData(prev => ({
-      ...prev,
-      availability: prev.availability.includes(slot)
-        ? prev.availability.filter(s => s !== slot)
-        : [...prev.availability, slot]
-    }));
-  };
-
   const handleSkillAssessment = (subject, topic, level) => {
     setFormData(prev => ({
       ...prev,
@@ -210,9 +197,10 @@ const StudentOnboarding = ({ onComplete }) => {
       weakTopics[subject] = [];
       strongTopics[subject] = [];
       
-      Object.entries(topics).forEach(([topic, level]) => {
-        if (level === 'weak') weakTopics[subject].push(topic.toLowerCase());
-        if (level === 'strong') strongTopics[subject].push(topic.toLowerCase());
+      // Store overall rating as a topic for compatibility
+      Object.entries(topics).forEach(([, level]) => {
+        if (level === 'weak') weakTopics[subject].push(subject.toLowerCase());
+        if (level === 'strong') strongTopics[subject].push(subject.toLowerCase());
       });
     });
 
@@ -260,14 +248,12 @@ const StudentOnboarding = ({ onComplete }) => {
   const canProceed = () => {
     if (step === 1) return formData.name && formData.age && formData.class;
     if (step === 2) return formData.subjects.length > 0;
-    if (step === 3) return formData.availability.length > 0;
-    if (step === 4) {
+    if (step === 3) {
       return formData.subjects.every(subject => 
-        formData.skillAssessment[subject] && 
-        Object.keys(formData.skillAssessment[subject]).length > 0
+        formData.skillAssessment[subject]?.['overall']
       );
     }
-    if (step === 5) {
+    if (step === 4) {
       return formData.subjects.every(subject => {
         const questions = generateQuizQuestions(subject);
         const answers = formData.quizAnswers[subject] || {};
@@ -283,12 +269,12 @@ const StudentOnboarding = ({ onComplete }) => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-2xl font-semibold text-gray-900">Welcome to LearnSync!</h2>
-            <span className="text-gray-500">Step {step} of 5</span>
+            <span className="text-gray-500">Step {step} of 4</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${(step / 5) * 100}%` }}
+              style={{ width: `${(step / 4) * 100}%` }}
             />
           </div>
         </div>
@@ -332,187 +318,179 @@ const StudentOnboarding = ({ onComplete }) => {
           </div>
         )}
 
-        {/* Step 2: Dynamic Subjects */}
+        {/* Step 2: Subject Selection Based on Class */}
         {step === 2 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">What subjects do you want to learn?</h3>
-            <p className="text-gray-600 text-sm">Add any subjects you're studying</p>
+            <h3 className="text-lg font-semibold text-gray-900">Select your subjects</h3>
+            <p className="text-gray-600 text-sm">Based on Class {formData.class}</p>
             
-            {/* Add Subject Input */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSubject}
-                onChange={(e) => setNewSubject(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddSubject()}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Mathematics, Science, English..."
-              />
-              <Button onClick={handleAddSubject}>
-                <Plus className="w-5 h-5" />
-              </Button>
-            </div>
+            {/* Core Subjects */}
+            {availableSubjects.core && availableSubjects.core.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Core Subjects</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {availableSubjects.core.map(subject => (
+                    <button
+                      key={subject}
+                      onClick={() => {
+                        setFormData(prev => {
+                          const isSelected = prev.subjects.includes(subject);
+                          const newSubjects = isSelected
+                            ? prev.subjects.filter(s => s !== subject)
+                            : [...prev.subjects, subject];
+                          
+                          const newSkillAssessment = { ...prev.skillAssessment };
+                          if (isSelected) {
+                            delete newSkillAssessment[subject];
+                          } else {
+                            newSkillAssessment[subject] = {};
+                          }
 
-            {/* Subject List */}
-            <div className="space-y-2">
-              {formData.subjects.map((subject) => (
-                <div
-                  key={subject}
-                  className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-xl"
-                >
-                  <span className="font-medium text-blue-900">{subject}</span>
-                  <button
-                    onClick={() => handleRemoveSubject(subject)}
-                    className="p-1 hover:bg-blue-100 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4 text-blue-600" />
-                  </button>
+                          return {
+                            ...prev,
+                            subjects: newSubjects,
+                            skillAssessment: newSkillAssessment
+                          };
+                        });
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        formData.subjects.includes(subject)
+                          ? 'border-blue-600 bg-blue-50 text-blue-900'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <p className="font-medium">{subject}</p>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {/* Additional Subjects */}
+            {availableSubjects.additional && availableSubjects.additional.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Additional Subjects (Optional)</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {availableSubjects.additional.map(subject => (
+                    <button
+                      key={subject}
+                      onClick={() => {
+                        setFormData(prev => {
+                          const isSelected = prev.subjects.includes(subject);
+                          const newSubjects = isSelected
+                            ? prev.subjects.filter(s => s !== subject)
+                            : [...prev.subjects, subject];
+                          
+                          const newSkillAssessment = { ...prev.skillAssessment };
+                          if (isSelected) {
+                            delete newSkillAssessment[subject];
+                          } else {
+                            newSkillAssessment[subject] = {};
+                          }
+
+                          return {
+                            ...prev,
+                            subjects: newSubjects,
+                            skillAssessment: newSkillAssessment
+                          };
+                        });
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        formData.subjects.includes(subject)
+                          ? 'border-green-600 bg-green-50 text-green-900'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <p className="font-medium text-sm">{subject}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Subject Input */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Add Other Subject</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSubject}
+                  onChange={(e) => setNewSubject(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddSubject()}
+                  className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Type subject name..."
+                />
+                <Button onClick={handleAddSubject}>
+                  <Plus className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
 
-            {formData.subjects.length === 0 && (
-              <p className="text-gray-500 text-sm text-center py-4">
-                Add at least one subject to continue
-              </p>
+            {/* Selected Subjects */}
+            {formData.subjects.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Selected Subjects ({formData.subjects.length})</h4>
+                <div className="flex flex-wrap gap-2">
+                  {formData.subjects.map((subject) => (
+                    <div
+                      key={subject}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg"
+                    >
+                      <span className="font-medium text-blue-900 text-sm">{subject}</span>
+                      <button
+                        onClick={() => handleRemoveSubject(subject)}
+                        className="p-1 hover:bg-blue-100 rounded transition-colors"
+                      >
+                        <X className="w-4 h-4 text-blue-600" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
 
-        {/* Step 3: Availability */}
+        {/* Step 3: Subject Rating */}
         {step === 3 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">When can you study?</h3>
-            <p className="text-gray-600 text-sm">Select your available days and times</p>
-            <div className="space-y-3">
-              {days.map((day) => (
-                <div key={day}>
-                  <p className="text-gray-700 font-medium mb-2">{day}</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {timeSlots.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => handleAvailabilityToggle(day, time)}
-                        className={`px-4 py-2 rounded-xl border transition-all ${
-                          formData.availability.includes(`${day} ${time}`)
-                            ? 'border-blue-600 bg-blue-50 text-blue-600'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Dynamic Self Assessment */}
-        {step === 4 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Tell us about your skills</h3>
-                <p className="text-gray-600 text-sm">Add topics for each subject and rate your level</p>
-              </div>
-              <button className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100">
-                <Mic className="w-4 h-4" />
-                <span className="text-sm">Voice Input</span>
-              </button>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Rate your understanding</h3>
+              <p className="text-gray-600 text-sm">How comfortable are you with each subject?</p>
             </div>
 
             {formData.subjects.map((subject) => (
-              <div key={subject} className="space-y-2 p-4 bg-gray-50 rounded-xl">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="font-semibold text-gray-900">{subject}</p>
-                  {selectedSubjectForTopics !== subject && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => setSelectedSubjectForTopics(subject)}
-                      className="text-sm"
+              <div key={subject} className="p-4 bg-gray-50 rounded-xl">
+                <p className="font-semibold text-gray-900 mb-3">{subject}</p>
+                <div className="flex gap-3">
+                  {['weak', 'okay', 'strong'].map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => handleSkillAssessment(subject, 'overall', level)}
+                      className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                        formData.skillAssessment[subject]?.['overall'] === level
+                          ? level === 'weak'
+                            ? 'bg-red-500 text-white'
+                            : level === 'okay'
+                            ? 'bg-yellow-500 text-white'
+                            : 'bg-green-500 text-white'
+                          : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}
                     >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add Topic
-                    </Button>
-                  )}
+                      <div className="text-2xl mb-1">
+                        {level === 'weak' ? '😕' : level === 'okay' ? '😐' : '😊'}
+                      </div>
+                      <div className="capitalize">{level}</div>
+                    </button>
+                  ))}
                 </div>
-
-                {/* Add Topic Input */}
-                {selectedSubjectForTopics === subject && (
-                  <div className="flex gap-2 mb-3">
-                    <input
-                      type="text"
-                      value={newTopic}
-                      onChange={(e) => setNewTopic(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleAddTopic(subject)}
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Algebra, Fractions, Grammar..."
-                      autoFocus
-                    />
-                    <Button onClick={() => handleAddTopic(subject)} className="text-sm">
-                      Add
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setSelectedSubjectForTopics('');
-                        setNewTopic('');
-                      }}
-                      className="text-sm"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-
-                {/* Topics List */}
-                {Object.keys(formData.skillAssessment[subject] || {}).map((topic) => (
-                  <div key={topic} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">{topic}</span>
-                      <button
-                        onClick={() => handleRemoveTopic(subject, topic)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                      >
-                        <X className="w-3 h-3 text-gray-400" />
-                      </button>
-                    </div>
-                    <div className="flex gap-2">
-                      {['weak', 'okay', 'strong'].map((level) => (
-                        <button
-                          key={level}
-                          onClick={() => handleSkillAssessment(subject, topic, level)}
-                          className={`px-3 py-1 rounded-lg text-sm transition-all ${
-                            formData.skillAssessment[subject]?.[topic] === level
-                              ? level === 'weak'
-                                ? 'bg-red-500 text-white'
-                                : level === 'okay'
-                                ? 'bg-yellow-500 text-white'
-                                : 'bg-green-500 text-white'
-                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                          }`}
-                        >
-                          {level === 'weak' ? '😕' : level === 'okay' ? '😐' : '😊'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                {Object.keys(formData.skillAssessment[subject] || {}).length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-2">
-                    Add topics for {subject}
-                  </p>
-                )}
               </div>
             ))}
           </div>
         )}
 
-        {/* Step 5: Dynamic Mini Quiz */}
-        {step === 5 && (
+        {/* Step 4: Dynamic Mini Quiz */}
+        {step === 4 && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
               <Brain className="w-6 h-6 text-purple-600" />
@@ -564,7 +542,7 @@ const StudentOnboarding = ({ onComplete }) => {
               Back
             </Button>
           )}
-          {step < 5 ? (
+          {step < 4 ? (
             <Button 
               onClick={() => setStep(step + 1)} 
               className="ml-auto"

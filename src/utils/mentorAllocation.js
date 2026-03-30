@@ -37,22 +37,16 @@ export const allocateMentor = (student, mentors) => {
     const subjectMatch = student.subjects.filter(s => mentor.subjects.includes(s)).length;
     score += subjectMatch * 10;
 
-    // Rule 5: Mentor availability match
-    const availabilityMatch = student.availability.some(slot =>
-      mentor.availability.includes(slot)
-    );
-    if (availabilityMatch) {
-      score += 20;
-    }
-
-    // Rule 6: Prefer mentors with fewer assigned students (load balancing)
-    if (mentor.assignedStudents.length < 3) {
+    // Rule 5: Prefer mentors with fewer assigned students (load balancing)
+    if (mentor.assignedStudents && mentor.assignedStudents.length < 3) {
       score += 15;
     }
 
-    // Rule 7: Consider mentor ratings
-    const avgRating = Object.values(mentor.ratings).reduce((a, b) => a + b, 0) / Object.values(mentor.ratings).length;
-    score += avgRating * 5;
+    // Rule 6: Consider mentor ratings
+    if (mentor.ratings && Object.keys(mentor.ratings).length > 0) {
+      const avgRating = Object.values(mentor.ratings).reduce((a, b) => a + b, 0) / Object.values(mentor.ratings).length;
+      score += avgRating * 5;
+    }
 
     return { mentor, score };
   });
