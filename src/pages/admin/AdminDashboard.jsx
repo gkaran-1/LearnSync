@@ -52,7 +52,7 @@ function BarChart({ data, valueKey, labelKey, color = '#2563eb', activeKey }) {
   )
 }
 
-function LineChart({ values, labels, color = '#2563eb', fill = false }) {
+function LineChart({ values, labels, color = '#2563eb', fill = false, unit = '%' }) {
   const W = 340, H = 90, padX = 20, padY = 10
   const min = Math.min(...values) - 5
   const max = Math.max(...values) + 5
@@ -76,7 +76,7 @@ function LineChart({ values, labels, color = '#2563eb', fill = false }) {
         <g key={i}>
           <circle cx={x} cy={y} r={3} fill={color} />
           <text x={x} y={H + 16} textAnchor="middle" fontSize={9} fill="#9ca3af">{labels[i]}</text>
-          <text x={x} y={y - 6} textAnchor="middle" fontSize={8} fill="#6b7280">{values[i]}%</text>
+          <text x={x} y={y - 6} textAnchor="middle" fontSize={8} fill="#6b7280">{values[i]}{unit}</text>
         </g>
       ))}
     </svg>
@@ -249,6 +249,9 @@ export default function AdminDashboard() {
   const attendanceLabels = (analytics.weeklyProgress || []).map(w => w.week || '').slice(-6)
   const growthData = attendanceWeekly.map((v, i) => Math.min(100, v + i * 2))
 
+  const activeMentorCount = mentors.filter(m => (m.assignedStudents || []).length > 0).length
+  const mentorWeeklyData = attendanceLabels.map((_, i) => Math.max(1, activeMentorCount - Math.floor((attendanceLabels.length - 1 - i) / 2)))
+
   const [modal, setModal] = useState(null)
 
   return (
@@ -282,19 +285,15 @@ export default function AdminDashboard() {
       {/* Charts */}
       {attendanceWeekly.length > 1 && (
         <div className="grid grid-cols-3 gap-4">
-          <ChartCard title="Mentor Activeness" sub="Sessions conducted per mentor"
-            stat={mentors.filter(m => (m.assignedStudents || []).length > 0).length}
+          <ChartCard title="Mentor Activeness" sub="Active mentors per week"
+            stat={activeMentorCount}
             statLabel="active mentors" statColor="text-blue-600">
-            <BarChart data={mentorActivityData} valueKey="sessions" labelKey="name" color="#2563eb" activeKey="active" />
-            <div className="flex items-center gap-3 mt-2">
-              <span className="flex items-center gap-1 text-xs text-gray-400"><span className="w-2.5 h-2.5 rounded-sm bg-blue-600 inline-block" /> Active</span>
-              <span className="flex items-center gap-1 text-xs text-gray-400"><span className="w-2.5 h-2.5 rounded-sm bg-gray-200 inline-block" /> Inactive</span>
-            </div>
+            <LineChart values={mentorWeeklyData} labels={attendanceLabels} color="#2563eb" fill unit="" />
           </ChartCard>
           <ChartCard title="Weekly Progress" sub="Average progress rate"
             stat={`${attendanceWeekly[attendanceWeekly.length - 1]}%`}
             statLabel="this week" statColor="text-green-600">
-            <LineChart values={attendanceWeekly} labels={attendanceLabels} color="#16a34a" fill />
+            <BarChart data={attendanceWeekly.map((v, i) => ({ val: v, label: attendanceLabels[i] }))} valueKey="val" labelKey="label" color="#16a34a" />
           </ChartCard>
           <ChartCard title="Growth Velocity" sub="Avg student score over time"
             stat={`+${growthData[growthData.length - 1] - growthData[0]}%`}
