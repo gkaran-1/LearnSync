@@ -90,6 +90,21 @@ export const initializeMockData = () => {
       sessionsCompleted: 28,
       avgImprovement: 18,
       onboarded: true
+    },
+    {
+      id: 3,
+      name: 'Mickal Mentor',
+      education: 'M.A Education',
+      subjects: ['Math', 'Science', 'English'],
+      skillLevel: 'advanced',
+      experience: 8,
+      teachingExperience: true,
+      ratings: { Math: 5, Science: 5, English: 5 },
+      availability: ['Mon 2PM', 'Tue 2PM', 'Wed 2PM', 'Thu 2PM', 'Fri 2PM', 'Sat 10AM'],
+      assignedStudents: [],
+      sessionsCompleted: 120,
+      avgImprovement: 40,
+      onboarded: true
     }
   ];
 

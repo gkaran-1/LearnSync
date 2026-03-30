@@ -6,7 +6,7 @@ import { Brain, Plus, X } from 'lucide-react';
 import { allocateMentor } from '../../utils/mentorAllocation';
 
 const StudentOnboarding = ({ onComplete }) => {
-  const { addStudent, appData, updateMentor } = useApp();
+  const { updateStudent, appData, updateMentor, currentUser } = useApp();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -189,7 +189,7 @@ const StudentOnboarding = ({ onComplete }) => {
     return 'advanced';
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const weakTopics = {};
     const strongTopics = {};
 
@@ -228,21 +228,29 @@ const StudentOnboarding = ({ onComplete }) => {
       streak: 0,
       attendance: 100,
       completedTopics: [],
-      onboarded: true
+      onboarded: true,
+      role: 'student'
     };
 
-    const studentId = Date.now();
-    const studentWithId = { ...newStudent, id: studentId };
+    // Use currentUser.id (which is the Firebase Auth UID)
+    const studentWithId = { ...newStudent, id: currentUser.id };
 
-    // Update mentor's assigned students
-    if (allocatedMentor) {
-      updateMentor(allocatedMentor.id, {
-        assignedStudents: [...allocatedMentor.assignedStudents, studentId]
-      });
+    const result = await updateStudent(currentUser.id, studentWithId);
+    
+    if (result.success) {
+      // Update mentor's assigned students
+      if (allocatedMentor) {
+        await updateMentor(allocatedMentor.id, {
+          assignedStudents: [...(allocatedMentor.assignedStudents || []), currentUser.id]
+        });
+      }
+      
+      // Complete onboarding
+      onComplete(studentWithId);
+    } else {
+      console.error('Error saving student data:', result.error);
+      alert('Failed to save your information. Please try again.');
     }
-
-    addStudent(studentWithId);
-    onComplete(studentWithId);
   };
 
   const canProceed = () => {

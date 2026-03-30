@@ -5,7 +5,7 @@ import Button from '../../components/Button';
 import { Brain, BookOpen, Award } from 'lucide-react';
 
 const MentorOnboarding = ({ onComplete }) => {
-  const { addMentor, appData } = useApp();
+  const { updateMentor, currentUser } = useApp();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -120,7 +120,7 @@ const MentorOnboarding = ({ onComplete }) => {
     return 'beginner';
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const skillLevel = calculateSkillLevel();
     
     // Calculate ratings per subject
@@ -141,14 +141,22 @@ const MentorOnboarding = ({ onComplete }) => {
       assignedStudents: [],
       sessionsCompleted: 0,
       avgImprovement: 0,
-      onboarded: true
+      onboarded: true,
+      role: 'mentor'
     };
 
-    const mentorId = Date.now();
-    const mentorWithId = { ...newMentor, id: mentorId };
+    // Use currentUser.id (which is the Firebase Auth UID)
+    const mentorWithId = { ...newMentor, id: currentUser.id };
 
-    addMentor(mentorWithId);
-    onComplete(mentorWithId);
+    const result = await updateMentor(currentUser.id, mentorWithId);
+    
+    if (result.success) {
+      // Complete onboarding
+      onComplete(mentorWithId);
+    } else {
+      console.error('Error saving mentor data:', result.error);
+      alert('Failed to save your information. Please try again.');
+    }
   };
 
   const canProceed = () => {
