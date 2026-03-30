@@ -270,7 +270,7 @@ const GrowthDashboard = ({ student, studyPlan, courses }) => {
       <Card>
         <h2 className="text-xl font-bold text-gray-900 mb-4">Focus Areas</h2>
         <div className="grid grid-cols-2 gap-3">
-          {Object.entries(student.weakTopics).map(([subject, topics]) => (
+          {student.weakTopics && Object.entries(student.weakTopics).map(([subject, topics]) => (
             topics.map((topic) => (
               <div key={topic} className="p-3 bg-red-50 border border-red-200 rounded-xl">
                 <p className="font-semibold text-red-600 capitalize">{topic}</p>
@@ -364,7 +364,7 @@ const MasteryDashboard = ({ student, studyPlan, courses }) => {
       <Card>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Areas for Improvement</h2>
         <div className="space-y-2">
-          {Object.entries(student.weakTopics).map(([subject, topics]) => (
+          {student.weakTopics && Object.entries(student.weakTopics).map(([subject, topics]) => (
             topics.map((topic) => (
               <div key={topic} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-900 capitalize">{topic}</span>

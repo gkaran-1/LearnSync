@@ -4,14 +4,16 @@ import { useApp } from '../context/AppContext';
 import { Home, BookOpen, Users, Calendar, HelpCircle, Bell, GraduationCap, Menu, X, LogOut, User, Sparkles } from 'lucide-react';
 import ChatbotPanel from './ChatbotPanel';
 
-const Layout = ({ children }) => {
-  const { currentRole, currentUser, updateCurrentUser, updateStudent } = useApp();
+const Layout = ({ children, onLogout }) => {
+  const { currentRole, currentUser, updateStudent } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [showChatbot, setShowChatbot] = useState(false);
   const location = useLocation();
 
   const handleLogout = () => {
-    updateCurrentUser(null);
+    if (onLogout) {
+      onLogout();
+    }
   };
 
   const handleQuizCompletion = (quizResult) => {

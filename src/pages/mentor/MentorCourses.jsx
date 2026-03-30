@@ -51,7 +51,7 @@ function SectionCard({ section, index }) {
   )
 }
 
-function QuizSection({ quizzes, courseId, onPass }) {
+function QuizSection({ quizzes, onPass }) {
   const [answers, setAnswers] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [score, setScore] = useState(null)
@@ -132,7 +132,7 @@ function QuizSection({ quizzes, courseId, onPass }) {
   )
 }
 
-function CourseDetail({ entry, onBack, onComplete, completed, quizPassed }) {
+function CourseDetail({ entry, onBack, onComplete, completed }) {
   const { aiModule, courseName, description, topics, duration } = entry
   const [showQuiz, setShowQuiz] = useState(false)
   const quizzes = aiModule?.quizzes || []
@@ -250,14 +250,19 @@ export default function MentorCourses() {
   // Resolve mentor ID — match by name from mockMentors or use currentUser.id
   const mentorId = currentUser?.id || (mockMentors.find(m => m.name === currentUser?.name)?.id) || null
 
-  const load = () => {
+  useEffect(() => {
+    const all = mentorId !== null
+      ? getMentorTrainingModulesForMentor(mentorId)
+      : []
+    setModules(all)
+  }, [mentorId])
+
+  const loadModules = () => {
     const all = mentorId !== null
       ? getMentorTrainingModulesForMentor(mentorId)
       : []
     setModules(all)
   }
-
-  useEffect(() => { load() }, [mentorId])
 
   const handleComplete = (courseId, score) => {
     const updated = { ...completedMap, [courseId]: { score, completedAt: new Date().toISOString() } }
@@ -277,7 +282,6 @@ export default function MentorCourses() {
           onBack={() => setSelected(null)}
           onComplete={(score) => handleComplete(selected.courseId, score)}
           completed={!!completedMap[selected.courseId]}
-          quizPassed={completedMap[selected.courseId]?.score}
         />
       </div>
     )
@@ -290,7 +294,7 @@ export default function MentorCourses() {
           <h2 className="text-base font-semibold text-gray-900">My Training Courses</h2>
           <p className="text-sm text-gray-500">AI-generated learning modules assigned to you by the NGO</p>
         </div>
-        <button onClick={load} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 transition-colors">
+        <button onClick={loadModules} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 transition-colors">
           <RefreshCw size={13} /> Refresh
         </button>
       </div>

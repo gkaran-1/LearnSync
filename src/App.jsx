@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { useEffect, useState } from 'react';
+import { onAuthChange, logout } from './services/auth';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
-import Login from './pages/Login';
+import LoginAuth from './pages/LoginAuth';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentOnboarding from './pages/student/StudentOnboarding';
 import Courses from './pages/student/Courses';
@@ -25,26 +27,53 @@ import AdminNotifications from './pages/admin/AdminNotifications';
 
 const AppRoutes = () => {
   const { currentRole, currentUser, updateCurrentUser, switchRole } = useApp();
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    // Listen to auth state changes
+    const unsubscribe = onAuthChange((user) => {
+      if (user) {
+        updateCurrentUser(user);
+        switchRole(user.role);
+      } else {
+        updateCurrentUser(null);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [updateCurrentUser, switchRole]);
 
   const handleLogin = (user, role) => {
     switchRole(role);
-    if (user.id === 'new') {
-      updateCurrentUser({ id: 'new', onboarded: false });
-    } else {
-      updateCurrentUser(user);
-    }
+    updateCurrentUser(user);
   };
 
   const handleOnboardingComplete = (user) => {
     updateCurrentUser(user);
   };
 
+  const handleLogout = async () => {
+    await logout();
+    updateCurrentUser(null);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-500 text-lg mb-2">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   // If no user is logged in, show landing page
   if (!currentUser) {
     return (
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="/login" element={<LoginAuth onLogin={handleLogin} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -61,7 +90,7 @@ const AppRoutes = () => {
   }
 
   return (
-    <Layout>
+    <Layout onLogout={handleLogout}>
       <Routes>
         {/* Student Routes */}
         {currentRole === 'student' && (

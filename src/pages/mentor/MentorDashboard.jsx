@@ -6,10 +6,25 @@ const MentorDashboard = () => {
   const { appData, currentUser } = useApp();
   
   const mentor = appData.mentors.find(m => m.id === currentUser?.id) || appData.mentors[0];
-  const assignedStudents = appData.students.filter(s => mentor.assignedStudents.includes(s.id));
+  
+  // Safety check for mentor data
+  if (!mentor) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-500">Loading mentor data...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const assignedStudents = appData.students.filter(s => 
+    mentor.assignedStudents && mentor.assignedStudents.includes(s.id)
+  );
+  
   const pendingDoubts = appData.doubts.filter(d => 
     d.status === 'open' && 
-    mentor.subjects.includes(d.subject)
+    mentor.subjects && mentor.subjects.includes(d.subject)
   );
 
   return (
