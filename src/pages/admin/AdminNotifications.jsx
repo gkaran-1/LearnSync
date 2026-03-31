@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useApp } from '../../context/AppContext'
 import { AlertTriangle, TrendingDown, User, GraduationCap, CheckCheck, Trash2, Filter, X, BookOpen, Target, MessageSquare, Send } from 'lucide-react'
 import { mockStudents, mockNGOCourses as mockCourses, MOCK_APP_STUDENTS } from '../../utils/mockData'
@@ -53,8 +54,8 @@ function StudentModal({ student, onClose }) {
   const enrolledCourses = mockCourses.filter(c => subjects.includes(c.subject))
   const weeksAttended = Math.round(sessions / 1.5) || 0
 
-  return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-[520px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
@@ -142,53 +143,29 @@ function StudentModal({ student, onClose }) {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
 
 // ── Take Action modal
 function ActionModal({ notif, onClose, onSubmit }) {
   const [response, setResponse] = useState('')
   const [actionType, setActionType] = useState('acknowledge')
-  const [submitted, setSubmitted] = useState(false)
 
   const actions = [
-    { key: 'acknowledge', label: '✅ Acknowledge & Monitor', desc: 'Mark as seen, will follow up' },
-    { key: 'schedule-meeting', label: '📅 Schedule Meeting', desc: 'Arrange a meeting with the mentor' },
-    { key: 'assign-counselor', label: '🩺 Assign Counselor', desc: 'Refer student to a counselor' },
-    { key: 'contact-parents', label: '📞 Contact Parents', desc: 'Reach out to parents/guardians' },
-    { key: 'reassign-mentor', label: '🔄 Reassign Mentor', desc: 'Assign a different mentor' },
+    { key: 'acknowledge',      label: 'Acknowledge & Monitor', desc: 'Mark as seen, will follow up' },
+    { key: 'schedule-meeting', label: 'Schedule Meeting',      desc: 'Arrange a meeting with the mentor' },
+    { key: 'assign-counselor', label: 'Assign Counselor',      desc: 'Refer student to a counselor' },
+    { key: 'contact-parents',  label: 'Contact Parents',       desc: 'Reach out to parents/guardians' },
+    { key: 'reassign-mentor',  label: 'Reassign Mentor',       desc: 'Assign a different mentor' },
   ]
 
   const handleSubmit = () => {
     onSubmit(notif.id, { actionType, response: response.trim() })
-    setSubmitted(true)
+    onClose()
   }
 
-  if (submitted) {
-    return (
-      <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-[440px] p-8 text-center space-y-4">
-          <div className="inline-flex p-3 bg-green-100 rounded-full">
-            <CheckCheck className="w-8 h-8 text-green-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">Action Recorded</h3>
-          <p className="text-sm text-gray-600">
-            The notification for <strong>{notif.student || notif.mentor}</strong> has been marked as actioned.
-            {actionType === 'schedule-meeting' && ' A meeting request will be sent to the mentor.'}
-            {actionType === 'assign-counselor' && ' The student will be referred for counseling support.'}
-            {actionType === 'contact-parents' && ' The parent contact process has been initiated.'}
-            {actionType === 'reassign-mentor' && ' The mentor reassignment is being processed.'}
-          </p>
-          <button onClick={onClose} className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
-            Done
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-[520px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -227,12 +204,9 @@ function ActionModal({ notif, onClose, onSubmit }) {
           {/* Admin notes */}
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Admin Notes (optional)</p>
-            <textarea
-              value={response}
-              onChange={e => setResponse(e.target.value)}
+            <textarea value={response} onChange={e => setResponse(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 h-24 resize-none"
-              placeholder="Add notes about this action..."
-            />
+              placeholder="Add notes about this action..." />
           </div>
 
           <div className="flex gap-2">
@@ -248,7 +222,7 @@ function ActionModal({ notif, onClose, onSubmit }) {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
 
 function TrendBadge({ trend }) {

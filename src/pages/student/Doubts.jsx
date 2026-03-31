@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import { HelpCircle, MessageCircle, CheckCircle, Plus, X, Clock, BookOpen } from 'lucide-react';
 
@@ -146,8 +147,8 @@ const Doubts = () => {
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm">
+      {showModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm">
           <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg fade-in max-h-[92vh] flex flex-col">
 
             {/* Drag handle — mobile only */}
@@ -245,7 +246,7 @@ const Doubts = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };
