@@ -483,141 +483,140 @@ Respond ONLY with valid JSON in this exact format, no additional text before or 
   if (!isOpen) return null;
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">AI Tutor</h1>
-          <p className="text-gray-500 mt-1 text-sm md:text-base">
-            {context ? `Learning about: ${context.title}` : 'Ask me anything about your studies'}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
+    <div className="h-full flex flex-col bg-white">
+
+      {/* ── Voice controls bar (compact) ── */}
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+        {context && (
+          <span className="flex-1 text-xs text-slate-500 font-medium truncate">
+            Topic: {context.title}
+          </span>
+        )}
+        {!context && (
+          <span className="flex-1 text-xs text-slate-500">Ask me anything about your studies</span>
+        )}
+
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setVoiceModeEnabled(prev => !prev)}
-            className={`p-2 md:p-3 rounded-xl transition-all ${
+            className={`p-2 rounded-xl transition-all text-xs flex items-center gap-1.5 ${
               voiceModeEnabled
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
-            title={voiceModeEnabled ? 'Voice mode enabled' : 'Enable voice mode'}
+            title={voiceModeEnabled ? 'Voice mode ON' : 'Enable voice mode'}
           >
-            <Mic className="w-4 h-4 md:w-5 md:h-5" />
+            <Mic className="w-3.5 h-3.5" />
+            {voiceModeEnabled && <span className="text-xs font-medium hidden sm:inline">Live</span>}
           </button>
-          {voiceModeEnabled && (
-            <span className="text-xs md:text-sm text-green-600 font-medium hidden md:inline">
-              Voice mode listening
-            </span>
-          )}
 
           <button
             onClick={toggleAutoSpeak}
-            className={`p-2 md:p-3 rounded-xl transition-all ${
+            className={`p-2 rounded-xl transition-all ${
               autoSpeak
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
-            title={autoSpeak ? 'Auto-speak enabled' : 'Auto-speak disabled'}
+            title={autoSpeak ? 'Auto-speak ON' : 'Auto-speak OFF'}
           >
-            {autoSpeak ? <Volume2 className="w-4 h-4 md:w-5 md:h-5" /> : <VolumeX className="w-4 h-4 md:w-5 md:h-5" />}
+            {autoSpeak ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           </button>
-          
+
           {isSpeaking && (
             <button
               onClick={stopSpeaking}
-              className="p-2 md:p-3 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all"
+              className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all"
               title="Stop speaking"
             >
-              <VolumeX className="w-4 h-4 md:w-5 md:h-5" />
+              <VolumeX className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col" style={{ height: 'calc(100vh - 200px)', maxHeight: '600px' }}>
-        <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 md:space-y-4">
-          {messages.length === 1 && (
-            <div className="mb-3 md:mb-4 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-start gap-2 md:gap-3">
-                <Mic className="w-4 h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs md:text-sm font-medium text-blue-900 mb-1">Voice Mode Available!</p>
-                  <p className="text-xs text-blue-700 mb-1 md:mb-2">
-                    Click the microphone button (or toggle the Voice Mode button above) and speak your question, or type as usual. 
-                    Enable auto-speak (speaker icon above) to hear responses read aloud.
-                  </p>
-                  <p className="text-xs text-blue-600 font-medium">
-                    💡 Tip: Start speaking immediately after clicking the mic button!
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {message.role === 'assistant' && (
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
-                </div>
-              )}
-              <div
-                className={`max-w-[85%] md:max-w-[75%] p-2 md:p-3 rounded-lg ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-50 text-gray-800 border border-gray-200'
-                }`}
-              >
-                <p className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-              </div>
-              {message.role === 'assistant' && (
-                <button
-                  onClick={() => speakText(message.content)}
-                  className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all flex-shrink-0"
-                  title="Read aloud"
-                  disabled={isSpeaking}
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ))}
-          {loading && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-      <div className="border-t border-gray-200 bg-white p-3 md:p-4">
-        {showQuiz && generatedQuiz && !quizSubmitted && (
-          <div className="mb-4 space-y-3 max-h-64 overflow-y-auto">
-            {generatedQuiz.questions.map((q, qIdx) => (
-              <div key={qIdx} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="font-medium text-gray-900 mb-3 text-sm">
-                  {qIdx + 1}. {q.question}
+      {/* ── Messages area ── */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+        {/* Voice tip – only on first load */}
+        {messages.length === 1 && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="flex items-start gap-2">
+              <Mic className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-blue-900 mb-0.5">Voice Mode Available</p>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Tap the mic icon above to enable voice mode, or use the mic button below for single questions.
                 </p>
-                <div className="space-y-2">
+              </div>
+            </div>
+          </div>
+        )}
+
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex gap-2.5 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            {message.role === 'assistant' && (
+              <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              </div>
+            )}
+            <div
+              className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                message.role === 'user'
+                  ? 'bg-blue-600 text-white rounded-br-sm'
+                  : 'bg-slate-100 text-slate-800 rounded-bl-sm'
+              }`}
+            >
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            </div>
+            {message.role === 'assistant' && (
+              <button
+                onClick={() => speakText(message.content)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0 self-start mt-0.5"
+                title="Read aloud"
+                disabled={isSpeaking}
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
+
+        {loading && (
+          <div className="flex gap-2.5">
+            <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            </div>
+            <div className="bg-slate-100 px-4 py-3 rounded-2xl rounded-bl-sm">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* ── Bottom area: quiz + input ── */}
+      <div className="border-t border-slate-200 bg-white p-3 flex-shrink-0">
+
+        {/* Quiz questions */}
+        {showQuiz && generatedQuiz && !quizSubmitted && (
+          <div className="mb-3 space-y-2.5 max-h-56 overflow-y-auto">
+            {generatedQuiz.questions.map((q, qIdx) => (
+              <div key={qIdx} className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <p className="font-semibold text-slate-900 mb-2 text-sm">{qIdx + 1}. {q.question}</p>
+                <div className="space-y-1.5">
                   {q.options.map((option, optIdx) => (
                     <label
                       key={optIdx}
-                      className={`flex items-center gap-3 p-2 rounded-lg border-2 cursor-pointer transition-all ${
+                      className={`flex items-center gap-2.5 p-2 rounded-lg border-2 cursor-pointer transition-all text-sm ${
                         quizAnswers[qIdx] === optIdx
                           ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
                       <input
@@ -625,119 +624,89 @@ Respond ONLY with valid JSON in this exact format, no additional text before or 
                         name={`quiz-${qIdx}`}
                         checked={quizAnswers[qIdx] === optIdx}
                         onChange={() => setQuizAnswers({ ...quizAnswers, [qIdx]: optIdx })}
-                        className="w-4 h-4"
+                        className="w-3.5 h-3.5 accent-blue-600"
                       />
-                      <span className="text-sm text-gray-700">{option}</span>
+                      <span className="text-slate-700 text-xs">{option}</span>
                     </label>
                   ))}
                 </div>
               </div>
             ))}
-            <Button
+            <button
               onClick={handleQuizSubmit}
               disabled={Object.keys(quizAnswers).length !== generatedQuiz.questions.length}
-              className="w-full"
+              className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Submit Quiz
-            </Button>
+            </button>
           </div>
         )}
-        
+
+        {/* Generate quiz button */}
         {!showQuiz && !quizSubmitted && conversationCount >= 2 && (
-          <div className="mb-3">
-            <Button
-              onClick={handleGenerateQuiz}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700"
-            >
-              <Brain className="w-4 h-4" />
-              Generate Quiz
-            </Button>
-          </div>
+          <button
+            onClick={handleGenerateQuiz}
+            disabled={loading}
+            className="w-full mb-2.5 py-2 flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold rounded-xl hover:bg-emerald-100 transition-colors disabled:opacity-50"
+          >
+            <Brain className="w-4 h-4" /> Generate Quiz
+          </button>
         )}
-        
+
+        {/* Voice error */}
         {voiceError && (
-          <div className={`mb-3 p-3 rounded-lg flex items-start gap-2 ${
-            voiceError.startsWith('✓') 
-              ? 'bg-green-50 border border-green-200' 
-              : 'bg-red-50 border border-red-200'
+          <div className={`mb-2.5 px-3 py-2 rounded-xl flex items-center gap-2 text-xs ${
+            voiceError.startsWith('✓')
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+              : 'bg-red-50 border border-red-200 text-red-700'
           }`}>
-            <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-              voiceError.startsWith('✓')
-                ? 'bg-green-100'
-                : 'bg-red-100'
-            }`}>
-              <span className={`text-xs font-bold ${
-                voiceError.startsWith('✓')
-                  ? 'text-green-600'
-                  : 'text-red-600'
-              }`}>
-                {voiceError.startsWith('✓') ? '✓' : '!'}
-              </span>
-            </div>
-            <p className={`text-sm flex-1 ${
-              voiceError.startsWith('✓')
-                ? 'text-green-700'
-                : 'text-red-700'
-            }`}>
-              {voiceError}
-            </p>
-            {!voiceError.startsWith('✓') && (
-              <button
-                onClick={() => setVoiceError('')}
-                className="text-red-400 hover:text-red-600 transition-colors"
-              >
-                ×
-              </button>
-            )}
+            <span className="flex-1">{voiceError}</span>
+            <button onClick={() => setVoiceError('')} className="opacity-60 hover:opacity-100">×</button>
           </div>
         )}
-        
-        <div className="flex gap-2">
+
+        {/* Input row */}
+        <div className="flex gap-2 items-center">
           <div className="relative">
             <button
               onClick={toggleListening}
               disabled={loading || voiceModeEnabled}
-              className={`p-2 md:p-3 rounded-lg transition-all ${
+              className={`p-2.5 rounded-xl transition-all ${
                 isListening
-                  ? 'bg-red-600 text-white hover:bg-red-700 animate-pulse'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              } ${voiceModeEnabled ? 'cursor-not-allowed opacity-60' : ''}`}
-              title={voiceModeEnabled
-                ? 'Voice mode manages the microphone'
-                : isListening
-                  ? 'Stop listening (click or speak)'
-                  : 'Start voice input (click and speak)'}
+                  ? 'bg-red-600 text-white animate-pulse'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              } ${voiceModeEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={isListening ? 'Listening…' : 'Tap to speak'}
             >
-              {isListening ? <MicOff className="w-4 h-4 md:w-5 md:h-5" /> : <Mic className="w-4 h-4 md:w-5 md:h-5" />}
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
             {isListening && (
-              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                Listening...
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
+                Listening…
               </div>
             )}
           </div>
-          
+
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Listening..." : "Type or click mic..."}
-            className="flex-1 px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder={isListening ? 'Listening…' : 'Type or click mic…'}
+            className="flex-1 px-3.5 py-2.5 text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60"
             disabled={loading || isListening}
           />
-          <Button
+
+          <button
             onClick={handleSend}
             disabled={loading || !input.trim() || isListening}
-            className="px-4 md:px-6 py-2 md:py-3"
-            title="Send message"
+            className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            title="Send"
           >
-            <Send className="w-4 h-4 md:w-5 md:h-5" />
-          </Button>
+            <Send className="w-4 h-4" />
+          </button>
         </div>
       </div>
-    </div>
     </div>
   );
 };
