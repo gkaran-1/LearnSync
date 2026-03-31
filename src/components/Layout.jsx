@@ -28,7 +28,11 @@ const Layout = ({ children, onLogout }) => {
     return () => window.removeEventListener('open-ai-drawer', handler);
   }, []);
 
-  const handleLogout = () => { if (onLogout) onLogout(); };
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   const handleQuizCompletion = (quizResult) => {
     if (currentRole === 'student' && currentUser) {
@@ -101,7 +105,10 @@ const Layout = ({ children, onLogout }) => {
               <Link
                 key={item.name}
                 to={item.path}
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => {
+                  setSidebarOpen(false);
+                  setShowChatbot(false); // Close AI Tutor when navigating
+                }}
                 className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
