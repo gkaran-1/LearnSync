@@ -8,7 +8,7 @@ import {
 
 const Layout = ({ children, onLogout }) => {
   const { currentRole, currentUser } = useApp();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
 
   const handleLogout = () => {
@@ -61,7 +61,7 @@ const Layout = ({ children, onLogout }) => {
       {/* ── Sidebar ── */}
       <div
         className={`fixed md:relative inset-y-0 left-0 z-50 flex flex-col
-          ${sidebarOpen ? 'w-64' : 'w-0 md:w-64'}
+          ${sidebarOpen ? 'w-64' : 'w-0'}
           bg-white border-r border-slate-200 transition-all duration-300 overflow-hidden`}
       >
         {/* Brand */}

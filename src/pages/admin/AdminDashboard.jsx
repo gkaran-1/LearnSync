@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import Card from '../../components/Card';
 import { Users, BookOpen, TrendingUp, AlertTriangle, X, ChevronRight, Sparkles, Lightbulb, ArrowRight, Brain } from 'lucide-react';
@@ -77,8 +78,8 @@ const LineAreaChart = ({ data, color = '#8b5cf6', height = 120 }) => {
 // ── Modal Component ─────────────────────────────────────────────────────────
 const Modal = ({ open, onClose, title, children }) => {
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -89,7 +90,8 @@ const Modal = ({ open, onClose, title, children }) => {
         </div>
         <div className="overflow-y-auto flex-1 px-6 py-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
