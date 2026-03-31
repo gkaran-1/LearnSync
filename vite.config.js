@@ -45,19 +45,9 @@ function ttsProxyPlugin() {
 export default defineConfig({
   plugins: [react(), ttsProxyPlugin()],
   build: {
-    // Optimize for production
     target: 'esnext',
     minify: 'terser',
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'ui-vendor': ['lucide-react', 'framer-motion']
-        }
-      }
-    },
     chunkSizeWarningLimit: 1000
   },
   server: {
