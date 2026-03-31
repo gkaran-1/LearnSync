@@ -1,16 +1,14 @@
 import { useApp } from '../../context/AppContext';
 import Card from '../../components/Card';
-import { User, Award, TrendingUp, Target, Zap, Calendar, BookOpen, Flame, CheckCircle } from 'lucide-react';
+import { User, Award, TrendingUp, Target, Zap, Calendar, BookOpen, Flame, CheckCircle, ScanLine } from 'lucide-react';
 
 const Profile = () => {
   const { appData, currentUser } = useApp();
   const student = appData.students.find(s => s.id === currentUser?.id) || appData.students[0];
   const mentor = appData.mentors.find(m => m.assignedStudents?.includes(student.id)) || appData.mentors[0];
 
-  // Use student.progress as the main completion metric
   const completionRate = student.progress || 45;
 
-  // Subject-wise progress mock data
   const subjectProgress = (student.subjects || ['Math', 'English', 'Science']).map((subject, i) => {
     const progressValues = [72, 58, 41, 65, 80];
     const colors = [
@@ -29,16 +27,38 @@ const Profile = () => {
     };
   });
 
-  // Quiz history mock data
-  const quizHistory = [
-    { date: '2026-03-28', topic: 'Fractions', score: 4, total: 5, subject: 'Math' },
-    { date: '2026-03-27', topic: 'Grammar Rules', score: 5, total: 5, subject: 'English' },
-    { date: '2026-03-26', topic: 'Algebra Basics', score: 3, total: 5, subject: 'Math' },
-    { date: '2026-03-25', topic: 'Photosynthesis', score: 4, total: 5, subject: 'Science' },
-    { date: '2026-03-24', topic: 'Decimals', score: 5, total: 5, subject: 'Math' },
-  ];
+  // Load OCR-scanned test scores from localStorage and merge with session scores
+  const ocrScores = JSON.parse(localStorage.getItem(`learnsync-test-scores-${student.id}`) || '[]')
+    .map(s => ({
+      date: s.date || '',
+      topic: s.topic || 'Unknown Topic',
+      score: Number(s.score),
+      total: Number(s.total),
+      subject: s.subject || 'General',
+      remarks: s.remarks || '',
+      source: 'offline',
+    }));
 
-  // Progress over time
+  const sessionScores = appData.sessions
+    .filter(s => s.studentId === student.id && s.score)
+    .map(s => ({
+      date: s.date || '',
+      topic: s.topic || 'Session Quiz',
+      score: s.score,
+      total: 5,
+      subject: s.subject || 'General',
+      source: 'online',
+    }));
+
+  // Merge: OCR scores first (most recent), then session scores
+  const quizHistory = [...ocrScores, ...sessionScores]
+    .sort((a, b) => (b.date > a.date ? 1 : -1));
+
+  // Derive weak topics from low-scoring OCR tests (< 50%)
+  const ocrWeakTopics = ocrScores
+    .filter(s => s.total > 0 && (s.score / s.total) < 0.5)
+    .map(s => ({ subject: s.subject, topic: s.topic }));
+
   const progressHistory = [
     { week: 'Week 1', progress: 18 },
     { week: 'Week 2', progress: 32 },
@@ -236,34 +256,73 @@ const Profile = () => {
 
       {/* Quiz History */}
       <Card>
-        <h3 className="font-semibold text-gray-900 mb-3">Recent Quiz Scores</h3>
-        <div className="space-y-2">
-          {quizHistory.map((quiz, index) => {
-            const percent = Math.round((quiz.score / quiz.total) * 100);
-            return (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 text-sm truncate">{quiz.topic}</p>
-                  <p className="text-xs text-gray-400">{quiz.subject} · {quiz.date}</p>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-3">
-                  <div className="w-16 sm:w-24 bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-full rounded-full ${percent >= 80 ? 'bg-green-500' : percent >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      style={{ width: `${percent}%` }}
-                    />
+        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          Recent Test Scores
+          {ocrScores.length > 0 && (
+            <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+              <ScanLine className="w-3 h-3" /> {ocrScores.length} offline
+            </span>
+          )}
+        </h3>
+        {quizHistory.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">No test scores yet. Your mentor will add them after scanning your answer sheets.</p>
+        ) : (
+          <div className="space-y-2">
+            {quizHistory.map((quiz, index) => {
+              const percent = quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : 0;
+              return (
+                <div key={index} className="p-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-gray-900 text-sm truncate">{quiz.topic}</p>
+                        {quiz.source === 'offline' && (
+                          <span className="flex items-center gap-0.5 text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full shrink-0">
+                            <ScanLine className="w-2.5 h-2.5" /> Offline
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">{quiz.subject} · {quiz.date}</p>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-3">
+                      <div className="w-16 sm:w-24 bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-full rounded-full ${percent >= 80 ? 'bg-green-500' : percent >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <span className={`font-bold text-sm ${percent >= 80 ? 'text-green-600' : percent >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {quiz.score}/{quiz.total}
+                      </span>
+                    </div>
                   </div>
-                  <span className={`font-bold text-sm ${
-                    percent >= 80 ? 'text-green-600' : percent >= 60 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {quiz.score}/{quiz.total}
-                  </span>
+                  {quiz.remarks && (
+                    <p className="text-xs text-gray-500 mt-1.5 italic pl-1">"{quiz.remarks}"</p>
+                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
+
+      {/* OCR-derived weak topics */}
+      {ocrWeakTopics.length > 0 && (
+        <Card>
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Target className="w-5 h-5 text-red-500" />
+            Needs Improvement (from offline tests)
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {ocrWeakTopics.map((item, i) => (
+              <div key={i} className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                <p className="font-semibold text-red-600 capitalize text-sm">{item.topic}</p>
+                <p className="text-xs text-red-400">{item.subject}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Attendance */}
       <Card>

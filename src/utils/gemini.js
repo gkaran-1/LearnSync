@@ -260,3 +260,43 @@ Generate exactly ${quizCount} quiz questions in the quizzes array. Each question
     quizzes: fallbackQuizzes
   }
 }
+
+// OCR: extract test score details from a scanned answer sheet image
+// imageBase64: base64 string of the image (without data URL prefix)
+// mimeType: e.g. 'image/jpeg' or 'image/png'
+export const scanTestPaper = async (imageBase64, mimeType = 'image/jpeg') => {
+  if (!API_KEY) {
+    return { success: false, data: null, error: 'Gemini API key not configured.' }
+  }
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const prompt = `You are analyzing a scanned student test/answer paper image.
+Extract the following information from the paper and respond ONLY with a valid JSON object:
+{
+  "studentName": "name if visible, else null",
+  "subject": "subject name (e.g. Math, Science, English)",
+  "topic": "topic or chapter name if visible",
+  "score": number (marks obtained, as integer),
+  "total": number (maximum marks, as integer),
+  "date": "date in YYYY-MM-DD format if visible, else null",
+  "grade": "grade/letter if visible, else null",
+  "remarks": "any teacher remarks or feedback visible on the paper"
+}
+If a field is not visible or cannot be determined, use null.
+Only return the JSON object, no other text.`
+
+    const result = await model.generateContent([
+      prompt,
+      { inlineData: { mimeType, data: imageBase64 } }
+    ])
+    const text = await result.response.text()
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      return { success: true, data: JSON.parse(jsonMatch[0]) }
+    }
+    return { success: false, data: null, error: 'Could not parse response.' }
+  } catch (e) {
+    console.error('[Gemini OCR] Error:', e)
+    return { success: false, data: null, error: e.message }
+  }
+}
