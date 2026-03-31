@@ -107,8 +107,8 @@ function AddCourseModal({ onClose, onAdd }) {
   const [files, setFiles] = useState([])
   const handleAdd = () => { onAdd({ id: Date.now(), ...form, students: 0, mentors: 0, avgProgress: 0, modules: files }); onClose() }
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-[480px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-full max-w-[480px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div><p className="text-sm font-semibold text-gray-900">Add Student Course</p><p className="text-xs text-gray-400">Step {step} of 2</p></div>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400"><X size={16} /></button>
@@ -189,8 +189,8 @@ function AddTrainingModal({ onClose, onAdd, mentorList }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-[500px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm w-full max-w-[500px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <p className="text-sm font-semibold text-gray-900">Add Mentor Training Course</p>
@@ -420,14 +420,14 @@ export default function Modules() {
   const maxStudents = Math.max(...studentCourses.map(c => c.students), 1)
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-gray-900">Courses</h2>
           <p className="text-sm text-gray-500">Manage student courses and mentor training</p>
         </div>
         <button onClick={() => tab === 'student' ? setShowStudentModal(true) : setShowTrainingModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
           <Plus size={14} />
           {tab === 'student' ? 'Add Course' : 'Add Training'}
         </button>
@@ -445,14 +445,14 @@ export default function Modules() {
       </div>
 
       {tab === 'student' && (<>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Total Courses</p><p className="text-2xl font-semibold text-gray-900 mt-1">{studentCourses.length}</p></div>
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Total Enrollments</p><p className="text-2xl font-semibold text-blue-600 mt-1">{studentCourses.reduce((s, c) => s + c.students, 0)}</p></div>
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Avg Progress</p><p className="text-2xl font-semibold text-green-600 mt-1">{studentCourses.length ? Math.round(studentCourses.reduce((s, c) => s + c.avgProgress, 0) / studentCourses.length) : 0}%</p></div>
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Total Modules</p><p className="text-2xl font-semibold text-gray-900 mt-1">{studentCourses.reduce((s, c) => s + c.modules.length, 0)}</p></div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[800px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Course</th>
@@ -474,13 +474,13 @@ export default function Modules() {
       </>)}
 
       {tab === 'mentor' && (<>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Training Courses</p><p className="text-2xl font-semibold text-gray-900 mt-1">{mentorCourses.length}</p></div>
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Mentors Enrolled</p><p className="text-2xl font-semibold text-blue-600 mt-1">{mentorCourses.reduce((s, c) => s + c.mentorsEnrolled, 0)}</p></div>
           <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-xs text-gray-500">Avg Completion</p><p className="text-2xl font-semibold text-green-600 mt-1">{mentorCourses.length ? Math.round(mentorCourses.reduce((s, c) => s + c.avgCompletion, 0) / mentorCourses.length) : 0}%</p></div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Training Course</th>

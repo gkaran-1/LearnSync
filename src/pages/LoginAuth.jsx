@@ -7,7 +7,7 @@ import { signIn, signUp, signInWithGoogle } from '../services/auth';
 
 const LoginAuth = ({ onLogin }) => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [role] = useState('student');
+  const [role, setRole] = useState('student');
   const [formData, setFormData] = useState({ email: '', password: '', name: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -199,18 +199,50 @@ const LoginAuth = ({ onLogin }) => {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {isSignUp && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter your name"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      placeholder="Enter your name"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">I am a</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setRole('student')}
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                          role === 'student'
+                            ? 'border-red-600 bg-red-50 text-red-700'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <GraduationCap className="w-5 h-5 mx-auto mb-1" />
+                        Student
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRole('mentor')}
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                          role === 'mentor'
+                            ? 'border-red-600 bg-red-50 text-red-700'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <Users className="w-5 h-5 mx-auto mb-1" />
+                        Mentor
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
 
               <div>
@@ -319,7 +351,7 @@ const LoginAuth = ({ onLogin }) => {
 
             {/* Toggle Sign Up/In */}
             <p className="mt-6 text-center text-sm text-gray-600">
-              {isSignUp ? "Don't have an account?" : "Already have an account?"}{' '}
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}{' '}
               <button
                 type="button"
                 onClick={() => {

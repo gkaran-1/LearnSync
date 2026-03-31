@@ -88,62 +88,62 @@ const Students = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">My Students</h1>
-        <p className="text-gray-500 mt-1">Manage and track student progress</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">My Students</h1>
+        <p className="text-sm md:text-base text-gray-500 mt-1">Manage and track student progress</p>
       </div>
 
       {/* Students Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {assignedStudents.map((student) => (
           <Card key={student.id} className="hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-blue-600" />
+            <div className="flex items-start gap-3 md:gap-4 mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{student.name}</h3>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenReport(student); }}
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors"
-                    title="Report this student's issue to NGO Administrator"
-                  >
-                    <AlertTriangle className="w-3 h-3" />
-                    Report to NGO
-                  </button>
-                </div>
-                <p className="text-sm text-gray-500">Age {student.age} • Class {student.class}</p>
+                <h3 className="font-semibold text-gray-900 text-sm md:text-base">{student.name}</h3>
+                <p className="text-xs md:text-sm text-gray-500">Age {student.age} • Class {student.class}</p>
               </div>
             </div>
+
+            {/* Report Button - Full Width on Mobile */}
+            <button
+              onClick={(e) => { e.stopPropagation(); handleOpenReport(student); }}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 mb-4 text-xs md:text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors"
+              title="Report this student's issue to NGO Administrator"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              Report to NGO
+            </button>
 
             <div className="space-y-3 mb-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-600">Progress</span>
-                  <span className="text-sm font-semibold text-gray-900">{student.progress}%</span>
+                  <span className="text-xs md:text-sm text-gray-600">Progress</span>
+                  <span className="text-xs md:text-sm font-semibold text-gray-900">{student.progress}%</span>
                 </div>
                 <ProgressBar progress={student.progress} />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-600">Attendance</span>
-                  <span className="text-sm font-semibold text-gray-900">{student.attendance}%</span>
+                  <span className="text-xs md:text-sm text-gray-600">Attendance</span>
+                  <span className="text-xs md:text-sm font-semibold text-gray-900">{student.attendance}%</span>
                 </div>
                 <ProgressBar progress={student.attendance} />
               </div>
             </div>
 
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-600">XP</span>
-              <span className="text-lg font-bold text-blue-600">{student.xp}</span>
+              <span className="text-xs md:text-sm text-gray-600">XP</span>
+              <span className="text-base md:text-lg font-bold text-blue-600">{student.xp}</span>
             </div>
 
             {/* Status Badge */}
             <div className="mb-4">
-              <span className={`px-3 py-1 rounded-full text-sm ${
+              <span className={`px-2.5 md:px-3 py-1 rounded-full text-xs md:text-sm ${
                 student.progress >= 70 && student.attendance >= 80 ? 'bg-green-100 text-green-600' :
                 student.progress >= 40 || student.attendance >= 60 ? 'bg-yellow-100 text-yellow-600' :
                 'bg-red-100 text-red-600'
@@ -177,50 +177,50 @@ const Students = () => {
         title={selectedStudent?.name || 'Student Details'}
       >
         {selectedStudent && (
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6 max-h-[70vh] overflow-y-auto px-1">
             {/* Basic Info */}
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-8 h-8 text-blue-600" />
+            <div className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-gray-50 rounded-xl">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">{selectedStudent.name}</h3>
-                <p className="text-gray-600">Age {selectedStudent.age} • Class {selectedStudent.class}</p>
-                <p className="text-gray-600 text-sm">Level: <span className="capitalize">{selectedStudent.level}</span></p>
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">{selectedStudent.name}</h3>
+                <p className="text-sm md:text-base text-gray-600">Age {selectedStudent.age} • Class {selectedStudent.class}</p>
+                <p className="text-xs md:text-sm text-gray-600">Level: <span className="capitalize">{selectedStudent.level}</span></p>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 bg-blue-50 rounded-lg text-center">
-                <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{selectedStudent.progress}%</p>
-                <p className="text-xs text-gray-600">Progress</p>
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
+              <div className="p-2 md:p-3 bg-blue-50 rounded-lg text-center">
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-600 mx-auto mb-1" />
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{selectedStudent.progress}%</p>
+                <p className="text-[10px] md:text-xs text-gray-600">Progress</p>
               </div>
-              <div className="p-3 bg-green-50 rounded-lg text-center">
-                <Calendar className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{selectedStudent.attendance}%</p>
-                <p className="text-xs text-gray-600">Attendance</p>
+              <div className="p-2 md:p-3 bg-green-50 rounded-lg text-center">
+                <Calendar className="w-4 h-4 md:w-5 md:h-5 text-green-600 mx-auto mb-1" />
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{selectedStudent.attendance}%</p>
+                <p className="text-[10px] md:text-xs text-gray-600">Attendance</p>
               </div>
-              <div className="p-3 bg-purple-50 rounded-lg text-center">
-                <Target className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{selectedStudent.xp}</p>
-                <p className="text-xs text-gray-600">XP</p>
+              <div className="p-2 md:p-3 bg-purple-50 rounded-lg text-center">
+                <Target className="w-4 h-4 md:w-5 md:h-5 text-purple-600 mx-auto mb-1" />
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{selectedStudent.xp}</p>
+                <p className="text-[10px] md:text-xs text-gray-600">XP</p>
               </div>
             </div>
 
             {/* Weak Topics */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
+              <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-2 md:mb-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
                 Weak Topics
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(selectedStudent.weakTopics).map(([subject, topics]) => (
                   topics.map((topic) => (
                     <div key={`${subject}-${topic}`} className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="font-medium text-red-600 capitalize text-sm">{topic}</p>
-                      <p className="text-xs text-red-500">{subject}</p>
+                      <p className="font-medium text-red-600 capitalize text-xs md:text-sm">{topic}</p>
+                      <p className="text-[10px] md:text-xs text-red-500">{subject}</p>
                     </div>
                   ))
                 ))}
@@ -229,15 +229,15 @@ const Students = () => {
 
             {/* Quiz Scores */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Recent Quiz Scores</h4>
+              <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-2 md:mb-3">Recent Quiz Scores</h4>
               <div className="space-y-2">
                 {getQuizHistory(selectedStudent.id).slice(0, 5).map((quiz, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{quiz.topic}</p>
-                      <p className="text-xs text-gray-500">{quiz.date}</p>
+                  <div key={index} className="flex items-center justify-between p-2 md:p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="text-sm md:text-base font-medium text-gray-900 truncate">{quiz.topic}</p>
+                      <p className="text-[10px] md:text-xs text-gray-500">{quiz.date}</p>
                     </div>
-                    <span className={`font-semibold ${
+                    <span className={`text-sm md:text-base font-semibold flex-shrink-0 ${
                       quiz.score / quiz.total >= 0.8 ? 'text-green-600' :
                       quiz.score / quiz.total >= 0.6 ? 'text-yellow-600' :
                       'text-red-600'
@@ -251,19 +251,19 @@ const Students = () => {
 
             {/* Notes Section */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-gray-600" />
+              <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-2 md:mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
                 Mentor Notes
               </h4>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+                className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 md:h-32 text-sm md:text-base"
                 placeholder="Add notes about this student's progress, concerns, or observations..."
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={handleSaveNotes} className="flex-1">
                 Save Notes
               </Button>
@@ -288,12 +288,12 @@ const Students = () => {
       >
         {reportSubmitted ? (
           /* Success state */
-          <div className="text-center py-6 space-y-4">
-            <div className="inline-flex p-4 bg-green-100 rounded-full">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="text-center py-4 md:py-6 space-y-3 md:space-y-4 px-2">
+            <div className="inline-flex p-3 md:p-4 bg-green-100 rounded-full">
+              <CheckCircle className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Report Sent Successfully</h3>
-            <p className="text-sm text-gray-600 max-w-sm mx-auto">
+            <h3 className="text-base md:text-lg font-semibold text-gray-900">Report Sent Successfully</h3>
+            <p className="text-xs md:text-sm text-gray-600 max-w-sm mx-auto">
               Your report about <strong>{reportStudent?.name}</strong> has been sent to the NGO Administrator.
               They will review it and take appropriate action.
             </p>
@@ -311,29 +311,29 @@ const Students = () => {
           </div>
         ) : (
           /* Report form */
-          <div className="space-y-5">
+          <div className="space-y-4 md:space-y-5 max-h-[70vh] overflow-y-auto px-1">
             {/* Student info banner */}
             {reportStudent && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-blue-700" />
+              <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 md:w-5 md:h-5 text-blue-700" />
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">{reportStudent.name}</p>
-                  <p className="text-xs text-gray-500">Age {reportStudent.age} • Class {reportStudent.class} • {reportStudent.level} level</p>
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-semibold text-gray-900 truncate">{reportStudent.name}</p>
+                  <p className="text-[10px] md:text-xs text-gray-500">Age {reportStudent.age} • Class {reportStudent.class} • {reportStudent.level} level</p>
                 </div>
               </div>
             )}
 
             {/* Issue type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Issue Type *</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Issue Type *</label>
               <div className="grid grid-cols-2 gap-2">
                 {ISSUE_TYPES.map(issue => (
                   <button
                     key={issue}
                     onClick={() => setReportIssue(issue)}
-                    className={`px-3 py-2 text-sm rounded-lg border transition-all text-left ${
+                    className={`px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm rounded-lg border transition-all text-left ${
                       reportIssue === issue
                         ? 'border-red-400 bg-red-50 text-red-800 font-medium'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
@@ -347,11 +347,11 @@ const Students = () => {
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-              <div className="flex gap-3">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <div className="flex gap-2 md:gap-3">
                 <button
                   onClick={() => setReportPriority('high')}
-                  className={`flex-1 px-4 py-2 text-sm rounded-lg border transition-all ${
+                  className={`flex-1 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm rounded-lg border transition-all ${
                     reportPriority === 'high'
                       ? 'border-red-400 bg-red-50 text-red-800 font-medium'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
@@ -361,7 +361,7 @@ const Students = () => {
                 </button>
                 <button
                   onClick={() => setReportPriority('medium')}
-                  className={`flex-1 px-4 py-2 text-sm rounded-lg border transition-all ${
+                  className={`flex-1 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm rounded-lg border transition-all ${
                     reportPriority === 'medium'
                       ? 'border-yellow-400 bg-yellow-50 text-yellow-800 font-medium'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
@@ -374,26 +374,26 @@ const Students = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Describe the Issue *</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Describe the Issue *</label>
               <textarea
                 value={reportDescription}
                 onChange={(e) => setReportDescription(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 h-32 text-sm"
+                className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 h-24 md:h-32 text-xs md:text-sm"
                 placeholder="Explain the problem in detail. What have you tried? Why does this need NGO intervention? ..."
               />
-              <p className="text-xs text-gray-400 mt-1">{reportDescription.length} characters</p>
+              <p className="text-[10px] md:text-xs text-gray-400 mt-1">{reportDescription.length} characters</p>
             </div>
 
             {/* Info box */}
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <p className="text-xs text-yellow-800">
+            <div className="p-2.5 md:p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <p className="text-[10px] md:text-xs text-yellow-800">
                 <strong>Note:</strong> This report will be sent to the NGO Administrator as a high-priority notification.
                 They will review it and may contact you for further details.
               </p>
             </div>
 
             {/* Submit */}
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="danger"
                 onClick={handleSubmitReport}

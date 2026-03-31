@@ -1,617 +1,677 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
-  BookOpen, TrendingUp, Zap, Star, Flame, Trophy, Award, Target,
-  ChevronRight, Clock, CheckCircle, BarChart2, Calendar, Sparkles,
-  ArrowUpRight, Circle
+  BookOpen, Star, Flame, Trophy, Target, ChevronRight, AlertCircle
 } from 'lucide-react';
 
-// ─── Reusable Stat Card ───────────────────────────────────────
-const StatCard = ({ label, value, sub, icon: Icon, color }) => {
-  const colorMap = {
-    blue:   { bg: 'bg-blue-50',   text: 'text-blue-600',   icon: 'bg-blue-100',    ring: 'ring-blue-200' },
-    emerald:{ bg: 'bg-emerald-50',text: 'text-emerald-600',icon: 'bg-emerald-100', ring: 'ring-emerald-200' },
-    amber:  { bg: 'bg-amber-50',  text: 'text-amber-600',  icon: 'bg-amber-100',   ring: 'ring-amber-200' },
-    rose:   { bg: 'bg-rose-50',   text: 'text-rose-600',   icon: 'bg-rose-100',    ring: 'ring-rose-200' },
-  };
-  const c = colorMap[color] || colorMap.blue;
-  return (
-    <div className={`${c.bg} rounded-2xl p-4 md:p-5 flex flex-col gap-3 ring-1 ${c.ring} stat-card cursor-default`}>
-      <div className={`w-10 h-10 ${c.icon} rounded-xl flex items-center justify-center`}>
-        <Icon className={`w-5 h-5 ${c.text}`} />
-      </div>
-      <div>
-        <p className="text-2xl md:text-3xl font-bold text-slate-900">{value}</p>
-        <p className="text-sm font-semibold text-slate-500 mt-0.5">{label}</p>
-        {sub && <p className={`text-xs font-medium ${c.text} mt-1`}>{sub}</p>}
-      </div>
-    </div>
-  );
-};
-
-// ─── Progress Ring ────────────────────────────────────────────
-const ProgressRing = ({ value, size = 80, stroke = 7, color = '#3b82f6' }) => {
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (value / 100) * circ;
-  return (
-    <svg width={size} height={size} className="-rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e2e8f0" strokeWidth={stroke} />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        className="transition-all duration-700" />
-    </svg>
-  );
-};
-
-// ─── FOUNDATION DASHBOARD (age ≤ 10) ─────────────────────────
-const FoundationDashboard = ({ student, studyPlan, courses }) => {
+const StudentDashboard = () => {
+  const { appData, currentUser } = useApp();
   const navigate = useNavigate();
+  
+  const student = appData.students.find(s => s.id === currentUser?.id) || appData.students[0];
   const nextLevelXP = 1000;
   const progressPercent = Math.min((student.xp / nextLevelXP) * 100, 100);
 
+  // Determine UI mode based on age
+  // Ages 5-10 (classes 1-5): Foundation - playful, colorful, gamified
+  // Ages 11-14 (classes 6-8): Growth - streak-based, normal
+  // Ages 15-19 (classes 9-12): Mastery - professional, clean
+  const getUIMode = () => {
+    if (student.age <= 10) return 'foundation';
+    if (student.age <= 14) return 'growth';
+    return 'mastery';
+  };
+  
+  const uiMode = getUIMode();
+
   const subjects = [
-    { name: 'Mathematics', bg: 'from-sky-500 to-blue-600', img: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80' },
-    { name: 'English',     bg: 'from-amber-500 to-orange-600', img: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&q=80' },
-    { name: 'Science',     bg: 'from-emerald-500 to-teal-600', img: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&q=80' },
+    { name: 'Mathematics', img: '/images/math_3d.png' },
+    { name: 'English', img: '/images/english_3d.png' },
+    { name: 'Science', img: '/images/science_3d.png' },
   ];
 
   const badges = [
-    { icon: Star,     name: 'First Star',    color: 'text-amber-500',   bg: 'bg-amber-50',   unlocked: true  },
-    { icon: Flame,    name: 'Streak Pro',    color: 'text-orange-500',  bg: 'bg-orange-50',  unlocked: student.streak >= 5 },
-    { icon: BookOpen, name: 'Bookworm',      color: 'text-blue-500',    bg: 'bg-blue-50',    unlocked: true  },
-    { icon: Target,   name: 'Sharpshooter', color: 'text-red-500',     bg: 'bg-red-50',     unlocked: false },
-    { icon: Zap,      name: 'Speed Star',   color: 'text-sky-500',     bg: 'bg-sky-50',     unlocked: false },
-    { icon: Award,    name: 'Champion',     color: 'text-emerald-500', bg: 'bg-emerald-50', unlocked: false },
+    { icon: Star, name: 'First Star', color: 'text-amber-500', bg: 'bg-amber-50', unlocked: true },
+    { icon: Flame, name: 'Streak Pro', color: 'text-orange-500', bg: 'bg-orange-50', unlocked: student.streak >= 5 },
+    { icon: BookOpen, name: 'Bookworm', color: 'text-blue-500', bg: 'bg-blue-50', unlocked: true },
+    { icon: Target, name: 'Sharpshooter', color: 'text-red-500', bg: 'bg-red-50', unlocked: false },
+    { icon: Trophy, name: 'Champion', color: 'text-emerald-500', bg: 'bg-emerald-50', unlocked: false },
   ];
 
-  return (
-    <div className="space-y-5">
-      {/* Hero */}
-      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-        <div className="flex items-center">
-          <div className="flex-1 p-5 md:p-8">
-            <p className="text-slate-500 text-sm font-medium">Hello there,</p>
-            <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mt-0.5">{student.name}!</h1>
-            <p className="text-slate-400 text-sm mt-1 mb-4">Ready to learn something amazing today?</p>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-semibold border border-amber-200">
-              <Trophy className="w-3.5 h-3.5" /> Level {student.level_number}
-            </span>
-          </div>
-          <img src="https://images.unsplash.com/photo-1503676382389-4809596d5290?w=300&q=80"
-            alt="Learning" className="w-28 h-28 md:w-44 md:h-44 object-cover flex-shrink-0 opacity-80" />
-        </div>
-      </div>
-
-      {/* XP Progress */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="font-semibold text-slate-800 flex items-center gap-2"><Star className="w-4 h-4 text-amber-500" /> Level Progress</span>
-          <span className="text-sm font-bold text-slate-700">{student.xp} / {nextLevelXP} XP</span>
-        </div>
-        <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-700"
-            style={{ width: `${progressPercent}%` }} />
-        </div>
-        <div className="flex justify-between mt-1.5 text-xs text-slate-400 font-medium">
-          <span>Lv {student.level_number}</span><span>Lv {student.level_number + 1}</span>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Stars Earned" value={student.xp} icon={Star} color="amber" sub="Keep going!" />
-        <StatCard label="Day Streak" value={`${student.streak}d`} icon={Flame} color="rose" sub="On fire!" />
-      </div>
-
-      {/* Subject Cards */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-3">My Subjects</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {subjects.map((s, i) => (
-            <div key={i} onClick={() => navigate('/courses')}
-              className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer hover:scale-105 transition-transform group shadow-sm">
-              <img src={s.img} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-              <p className="absolute bottom-2 inset-x-0 text-center text-white text-xs font-bold px-1">{s.name}</p>
+  // FOUNDATION MODE (Ages 5-10) - Playful & Colorful
+  if (uiMode === 'foundation') {
+    return (
+      <div className="space-y-5 max-w-6xl mx-auto">
+        {/* Hero Section */}
+        <div className="bg-white rounded-3xl overflow-hidden shadow-xl border-2 border-slate-200">
+          <div className="flex items-center p-6 md:p-8">
+            <div className="flex-1">
+              <p className="text-slate-500 text-sm font-medium mb-1">Hello there,</p>
+              <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-2">{student.name}!</h1>
+              <p className="text-slate-600 text-base mb-4">Ready to learn something amazing today?</p>
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-bold border-2 border-amber-200">
+                <Trophy className="w-4 h-4" /> Level {student.level_number}
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Today's Missions */}
-      {studyPlan?.tasks?.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
-          <h2 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <Target className="w-4 h-4 text-blue-500" /> Today's Missions
-          </h2>
-          <div className="space-y-2">
-            {studyPlan.tasks.slice(0, 3).map((task, i) => {
-              const cols = ['bg-blue-50 border-blue-200 text-blue-700','bg-emerald-50 border-emerald-200 text-emerald-700','bg-amber-50 border-amber-200 text-amber-700'];
-              return (
-                <div key={task.id} className={`flex items-center gap-3 p-3 rounded-xl border ${cols[i % 3]}`}>
-                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                  <p className="text-sm font-medium flex-1 truncate">{task.task}</p>
-                  <span className="text-xs font-bold">+{task.xp} XP</span>
-                </div>
-              );
-            })}
+            <img 
+              src="/images/hero_kids.png" 
+              alt="Learning" 
+              className="w-32 h-32 md:w-48 md:h-48 object-contain flex-shrink-0"
+            />
           </div>
         </div>
-      )}
 
-      {/* Badges */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
-        <h2 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-amber-500" /> My Badges
-        </h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-          {badges.map((b, i) => {
-            const B = b.icon;
-            return (
-              <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center
-                ${b.unlocked ? `${b.bg} border-slate-200` : 'bg-slate-50 border-slate-100 opacity-40'}`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${b.unlocked ? b.bg : 'bg-slate-100'}`}>
-                  <B className={`w-4 h-4 ${b.unlocked ? b.color : 'text-slate-400'}`} />
-                </div>
-                <p className="text-xs font-semibold text-slate-700 leading-tight">{b.name}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── GROWTH DASHBOARD (age 11–14) ─────────────────────────────
-const GrowthDashboard = ({ student, studyPlan, courses }) => {
-  const navigate = useNavigate();
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-slate-500 font-medium">Welcome back,</p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{student.name}!</h1>
-          <p className="text-sm text-blue-600 font-medium mt-1">Growth Mode · Level {student.level_number}</p>
-        </div>
-        <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-200">
-          <Zap className="w-4 h-4" /> {student.xp} XP Total
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Total XP"   value={student.xp}           icon={Zap}       color="blue"    sub="Points earned" />
-        <StatCard label="Day Streak" value={`${student.streak}d`} icon={Flame}     color="rose"    sub="Keep going!" />
-        <StatCard label="Progress"   value={`${student.progress}%`} icon={TrendingUp} color="emerald" sub="Overall" />
-        <StatCard label="Level"      value={student.level_number} icon={Award}     color="amber"   sub="Current rank" />
-      </div>
-
-      {studyPlan?.tasks?.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Daily Quests</h2>
-            <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
-              {studyPlan.tasks.filter(t => t.completed).length}/{studyPlan.tasks.length} done
+        {/* XP Progress */}
+        <div className="bg-white rounded-3xl border-2 border-slate-200 p-5 md:p-6 shadow-lg">
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+              <Star className="w-5 h-5 text-amber-500" /> Level Progress
             </span>
+            <span className="text-base font-black text-slate-700">{student.xp} / {nextLevelXP} XP</span>
           </div>
-          <div className="space-y-2.5">
-            {studyPlan.tasks.map((task) => (
-              <div key={task.id} className={`flex items-center gap-3 p-3.5 rounded-xl border-2
-                ${task.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-                  ${task.completed ? 'bg-emerald-500' : 'bg-blue-600'}`}>
-                  {task.completed
-                    ? <CheckCircle className="w-4 h-4 text-white" />
-                    : <Zap className="w-4 h-4 text-white" />}
+          <div className="w-full bg-slate-200 rounded-full h-4 overflow-hidden shadow-inner">
+            <div 
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 transition-all duration-700 shadow-lg"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-sm text-slate-500 font-bold">
+            <span>Lv {student.level_number}</span>
+            <span>Lv {student.level_number + 1}</span>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-3xl p-6 border-2 border-amber-200 shadow-lg">
+            <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mb-3 shadow-md">
+              <Star className="w-7 h-7 text-amber-500" />
+            </div>
+            <p className="text-4xl font-black text-slate-900 mb-1">{student.xp}</p>
+            <p className="text-sm font-bold text-slate-600">Stars Earned</p>
+            <p className="text-xs font-semibold text-amber-600 mt-1">Keep going!</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-3xl p-6 border-2 border-rose-200 shadow-lg">
+            <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-3 shadow-md">
+              <Flame className="w-7 h-7 text-rose-500" />
+            </div>
+            <p className="text-4xl font-black text-slate-900 mb-1">{student.streak}d</p>
+            <p className="text-sm font-bold text-slate-600">Day Streak</p>
+            <p className="text-xs font-semibold text-rose-600 mt-1">On fire!</p>
+          </div>
+        </div>
+
+        {/* My Subjects */}
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 mb-4 flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-blue-500" /> My Subjects
+          </h2>
+          <div className="grid grid-cols-3 gap-4">
+            {subjects.map((subject, i) => (
+              <div
+                key={i}
+                onClick={() => navigate('/courses')}
+                className="relative aspect-square rounded-3xl overflow-hidden cursor-pointer hover:scale-105 transition-transform group shadow-xl bg-white"
+              >
+                <img 
+                  src={subject.img} 
+                  alt={subject.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900/80 to-transparent p-3">
+                  <p className="text-white text-sm md:text-base font-black text-center drop-shadow-lg">
+                    {subject.name}
+                  </p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">{task.task}</p>
-                  <p className="text-xs text-slate-500">{task.topic}</p>
-                </div>
-                <span className="text-sm font-bold text-blue-600 flex-shrink-0">+{task.xp} XP</span>
               </div>
             ))}
           </div>
-          <button onClick={() => navigate('/courses')}
-            className="w-full mt-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-            Continue Learning
-          </button>
         </div>
-      )}
 
-      {courses?.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">My Courses</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {courses.slice(0, 4).map((course, i) => {
-              const imgs = [
-                'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80',
-                'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&q=80',
-                'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&q=80',
-                'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&q=80',
-              ];
-              const prog = Math.floor(Math.random() * 40) + 30;
+        {/* Daily Challenge */}
+        <div 
+          className="relative bg-white rounded-3xl p-6 overflow-hidden shadow-xl border-2 border-slate-200 cursor-pointer hover:shadow-2xl transition-all"
+          onClick={() => navigate('/courses')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 text-blue-600" />
+                </div>
+                <span className="text-slate-600 text-sm font-bold">Daily Challenge</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Complete 3 Lessons Today!</h3>
+              <p className="text-slate-600 text-sm mb-4">Earn bonus XP and unlock special rewards</p>
+              <button className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2">
+                Start Challenge <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <img 
+              src="/images/daily_challenge.png" 
+              alt="Challenge"
+              className="w-32 h-32 md:w-40 md:h-40 object-contain"
+            />
+          </div>
+        </div>
+
+        {/* My Badges */}
+        <div className="bg-white rounded-3xl border-2 border-slate-200 p-5 md:p-6 shadow-lg">
+          <h2 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-500" /> My Badges
+          </h2>
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+            {badges.map((badge, i) => {
+              const BadgeIcon = badge.icon;
               return (
-                <div key={course.id} onClick={() => navigate('/courses')}
-                  className="cursor-pointer rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all group">
-                  <div className="relative h-28" style={{
-                    backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0.2)), url(${imgs[i % imgs.length]})`,
-                    backgroundSize: 'cover', backgroundPosition: 'center'
-                  }}>
-                    <div className="absolute bottom-3 left-3">
-                      <p className="text-white font-bold text-sm">{course.name}</p>
-                      <p className="text-white/70 text-xs">{course.subject || 'General'}</p>
-                    </div>
-                    <ChevronRight className="absolute right-3 top-3 w-4 h-4 text-white/70 group-hover:translate-x-1 transition-transform" />
+                <div
+                  key={i}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 text-center transition-all
+                    ${badge.unlocked 
+                      ? `${badge.bg} border-slate-200 shadow-md hover:scale-105` 
+                      : 'bg-slate-50 border-slate-100 opacity-40 grayscale'
+                    }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${badge.unlocked ? badge.bg : 'bg-slate-100'} shadow-sm`}>
+                    <BadgeIcon className={`w-6 h-6 ${badge.unlocked ? badge.color : 'text-slate-400'}`} />
                   </div>
-                  <div className="p-3">
-                    <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-                      <span>Progress</span><span className="font-bold text-slate-800">{prog}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5">
-                      <div className="bg-blue-600 h-full rounded-full" style={{ width: `${prog}%` }} />
-                    </div>
-                  </div>
+                  <p className="text-xs font-bold text-slate-700 leading-tight">{badge.name}</p>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
-
-      {student.weakTopics && Object.keys(student.weakTopics).length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h2 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <Target className="w-4 h-4 text-amber-500" /> Focus Areas
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {Object.entries(student.weakTopics).map(([subj, topics]) =>
-              topics.map(topic => (
-                <div key={topic} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Target className="w-4 h-4 text-amber-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 capitalize truncate">{topic}</p>
-                    <p className="text-xs text-slate-500">{subj}</p>
-                  </div>
-                  <button onClick={() => navigate('/courses')}
-                    className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-semibold hover:bg-amber-200 transition-colors flex-shrink-0">
-                    Practice
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── MASTERY DASHBOARD (age ≥ 15) — 12th Grade ────────────────
-const MasteryDashboard = ({ student, studyPlan, courses }) => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
-
-  const xpToNext = 1000;
-  const xpProgress = Math.min((student.xp / xpToNext) * 100, 100);
-
-  const todayDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
-
-  const subjectImages = {
-    Math: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80',
-    Science: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&q=80',
-    English: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&q=80',
-    Physics: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&q=80',
-    Chemistry: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=600&q=80',
-    'Computer Science': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&q=80',
-  };
-
-  const tabs = ['overview', 'courses', 'schedule'];
-
-  // Quick tips for 12th grade students
-  const tips = [
-    { icon: Target,    text: 'Solve 3 previous year questions daily', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
-    { icon: Clock,     text: 'Use Pomodoro: 25 min study, 5 min break', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-    { icon: BarChart2, text: 'Review weak topics before the exam week', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
-  ];
-
-  return (
-    <div className="space-y-5 md:space-y-6">
-
-      {/* ── Header Banner ── */}
-      <div className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-5 md:p-7 overflow-hidden">
-        {/* bg decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-sky-500/10 rounded-full translate-y-1/2" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 pulse-dot" />
-              <span className="text-slate-400 text-sm font-medium">{todayDate}</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">
-              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {student.name.split(' ')[0]}!
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Class 12 · Mastery Mode · Level {student.level_number}
-            </p>
-          </div>
-
-          {/* XP ring */}
-          <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20 flex-shrink-0">
-              <ProgressRing value={xpProgress} size={80} stroke={6} color="#3b82f6" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-white font-bold text-sm leading-none">{Math.round(xpProgress)}%</span>
-                <span className="text-slate-400 text-xs">XP</span>
-              </div>
-            </div>
-            <div className="text-right hidden sm:block">
-              <p className="text-white font-bold text-2xl">{student.xp}</p>
-              <p className="text-slate-400 text-xs">of {xpToNext} XP</p>
-              <p className="text-blue-400 text-xs font-semibold mt-1">Level {student.level_number + 1} soon!</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Key Stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Total XP"     value={student.xp}             icon={Zap}        color="blue"    sub={`Lv ${student.level_number}`} />
-        <StatCard label="Study Streak" value={`${student.streak}d`}   icon={Flame}      color="rose"    sub="Keep it up!" />
-        <StatCard label="Progress"     value={`${student.progress}%`} icon={TrendingUp} color="emerald" sub="Overall" />
-        <StatCard label="Attendance"   value={`${student.attendance}%`} icon={Calendar} color="amber"   sub={student.attendance >= 80 ? 'Excellent' : 'Improve this'} />
-      </div>
-
-      {/* ── Tab Selector ── */}
-      <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {tabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-all
-              ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* ── OVERVIEW TAB ── */}
-      {activeTab === 'overview' && (
-        <div className="space-y-5">
-
-          {/* Today's Study Tips */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h2 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-blue-500" /> Study Tips for Today
-            </h2>
-            <div className="space-y-2.5">
-              {tips.map((tip, i) => {
-                const TipIcon = tip.icon;
-                return (
-                  <div key={i} className={`flex items-center gap-3 p-3 ${tip.bg} border ${tip.border} rounded-xl`}>
-                    <div className={`w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <TipIcon className={`w-4 h-4 ${tip.color}`} />
-                    </div>
-                    <p className="text-sm font-medium text-slate-700">{tip.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Study Plan Quick View */}
-          {studyPlan?.tasks?.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold text-slate-900">Today's Schedule</h2>
-                <button onClick={() => navigate('/study-plan')}
-                  className="flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700">
-                  View all <ArrowUpRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <div className="space-y-2.5">
-                {studyPlan.tasks.slice(0, 4).map((task) => (
-                  <div key={task.id} className={`flex items-center gap-3 p-3.5 rounded-xl border-2
-                    ${task.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0
-                      ${task.completed ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'}`}>
-                      {task.completed && <CheckCircle className="w-3 h-3 text-white" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${task.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                        {task.task}
-                      </p>
-                      <p className="text-xs text-slate-400">{task.topic}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs font-bold text-blue-600">+{task.xp} XP</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => navigate('/study-plan')}
-                className="w-full mt-4 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors">
-                Open Study Planner
-              </button>
-            </div>
-          )}
-
-          {/* Weak Topics */}
-          {student.weakTopics && Object.keys(student.weakTopics).length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-rose-500" /> Areas to Strengthen
-                </h2>
-                <span className="text-xs text-slate-400 font-medium">Focus this week</span>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {Object.entries(student.weakTopics).map(([subj, topics]) =>
-                  topics.map(topic => (
-                    <button key={topic} onClick={() => navigate('/courses')}
-                      className="flex items-center gap-2 px-3.5 py-2 bg-rose-50 border border-rose-200 rounded-xl text-sm font-medium text-rose-700 hover:bg-rose-100 transition-colors">
-                      <Circle className="w-2 h-2 fill-rose-400 text-rose-400" />
-                      <span className="capitalize">{topic}</span>
-                      <span className="text-rose-400 text-xs">· {subj}</span>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── COURSES TAB ── */}
-      {activeTab === 'courses' && (
-        <div className="space-y-4">
-          {courses?.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {courses.map((course, i) => {
-                const img = subjectImages[course.subject] || subjectImages.Science;
-                const prog = Math.floor(Math.random() * 40) + 35;
-                const totalChapters = course.chapters?.length || course.lessons?.length || 0;
-                return (
-                  <div key={course.id} onClick={() => navigate('/courses')}
-                    className="cursor-pointer rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-all group">
-                    <div className="relative h-36" style={{
-                      backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.2)), url(${img})`,
-                      backgroundSize: 'cover', backgroundPosition: 'center'
-                    }}>
-                      <div className="absolute inset-x-0 bottom-0 p-4">
-                        <h3 className="text-white font-bold text-base">{course.name}</h3>
-                        <p className="text-white/70 text-xs mt-0.5">{course.subject || 'General'} · {totalChapters} chapters</p>
-                      </div>
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
-                        <BookOpen className="w-3 h-3 text-white" />
-                        <span className="text-white text-xs font-semibold">{prog}%</span>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <div className="flex justify-between text-xs text-slate-500 mb-2">
-                        <span>Progress</span><span className="font-bold text-slate-800">{prog}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 mb-3">
-                        <div className="bg-blue-600 h-full rounded-full transition-all" style={{ width: `${prog}%` }} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-slate-400">
-                          <Star className="w-3 h-3 text-amber-500" /> +{(i + 1) * 50} XP
-                        </div>
-                        <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1">
-                          Continue <ArrowUpRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-              <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium">No courses assigned yet</p>
-              <p className="text-slate-400 text-sm mt-1">Your mentor will assign courses soon</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── SCHEDULE TAB ── */}
-      {activeTab === 'schedule' && (
-        <div className="space-y-4">
-          {studyPlan?.tasks?.length > 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-bold text-slate-900">Full Schedule</h2>
-                <span className="px-3 py-1 bg-slate-100 rounded-full text-sm text-slate-600 font-medium">
-                  {studyPlan.tasks.filter(t => t.completed).length}/{studyPlan.tasks.length} done
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="mb-5">
-                <div className="flex justify-between text-sm text-slate-500 mb-2">
-                  <span>Daily Progress</span>
-                  <span className="font-bold text-slate-800">
-                    {Math.round((studyPlan.tasks.filter(t => t.completed).length / studyPlan.tasks.length) * 100)}%
-                  </span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-emerald-500 h-full rounded-full transition-all"
-                    style={{ width: `${(studyPlan.tasks.filter(t => t.completed).length / studyPlan.tasks.length) * 100}%` }} />
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                {studyPlan.tasks.map((task, idx) => (
-                  <div key={task.id} className={`flex items-start gap-3.5 p-4 rounded-xl border-2
-                    ${task.completed ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100 hover:border-slate-200'}`}>
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold
-                      ${task.completed ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                      {task.completed ? <CheckCircle className="w-4 h-4" /> : idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold ${task.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                        {task.task}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5">{task.topic}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <span className="text-xs font-bold text-blue-600">+{task.xp} XP</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button onClick={() => navigate('/study-plan')}
-                className="w-full mt-4 py-2.5 border-2 border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:border-slate-300 hover:bg-slate-50 transition-all">
-                Manage Schedule in Study Planner
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-              <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium">No schedule yet</p>
-              <button onClick={() => navigate('/study-plan')}
-                className="mt-3 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-                Create Study Plan
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── MAIN COMPONENT ───────────────────────────────────────────
-const StudentDashboard = () => {
-  const { appData, currentUser } = useApp();
-
-  const student = appData.students.find(s => s.id === currentUser?.id);
-
-  if (!student) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-slate-500 font-medium">Loading your dashboard…</p>
         </div>
       </div>
     );
   }
 
-  const studyPlan = appData.studyPlans.find(p => p.studentId === student.id);
-  const courses   = appData.courses.filter(c => student.subjects?.includes(c.subject));
+  // GROWTH MODE (Ages 11-14) - Streak-based & Normal
+  if (uiMode === 'growth') {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto px-4 md:px-0">
+        {/* Welcome Header */}
+        <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200 shadow-sm">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Welcome back, {student.name}!</h1>
+          <p className="text-gray-600 text-sm md:text-base">Keep your streak alive and reach new milestones</p>
+        </div>
 
-  if (student.age <= 10) return <FoundationDashboard student={student} studyPlan={studyPlan} courses={courses} />;
-  if (student.age <= 14) return <GrowthDashboard     student={student} studyPlan={studyPlan} courses={courses} />;
-  return                        <MasteryDashboard    student={student} studyPlan={studyPlan} courses={courses} />;
+        {/* Streak & XP Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl p-4 md:p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Flame className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{student.streak} Days</p>
+                <p className="text-sm text-gray-500">Current Streak</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2">
+              <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${Math.min((student.streak / 30) * 100, 100)}%` }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Goal: 30 days</p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 md:p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Star className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">{student.xp} XP</p>
+                <p className="text-sm text-gray-500">Total Experience</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2">
+              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${progressPercent}%` }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Level {student.level_number} → {student.level_number + 1}</p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 md:p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xl md:text-2xl font-bold text-gray-900">Level {student.level_number}</p>
+                <p className="text-sm text-gray-500">Current Level</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Subjects Grid */}
+        <div>
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4">My Subjects</h2>
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            {/* Mathematics */}
+            <div
+              onClick={() => navigate('/courses')}
+              className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="relative h-28 md:h-32 overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=500&q=80" 
+                  alt="Mathematics"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="relative h-full p-2 md:p-3 flex flex-col justify-between text-white">
+                  <div className="w-7 h-7 md:w-8 md:h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                  </div>
+                  <p className="font-bold text-xs md:text-sm">Mathematics</p>
+                </div>
+              </div>
+              <div className="p-2 bg-white">
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: '75%' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* English */}
+            <div
+              onClick={() => navigate('/courses')}
+              className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="relative h-28 md:h-32 overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=500&q=80" 
+                  alt="English"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="relative h-full p-2 md:p-3 flex flex-col justify-between text-white">
+                  <div className="w-7 h-7 md:w-8 md:h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                  </div>
+                  <p className="font-bold text-xs md:text-sm">English</p>
+                </div>
+              </div>
+              <div className="p-2 bg-white">
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="bg-green-600 h-1.5 rounded-full" style={{ width: '60%' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Science */}
+            <div
+              onClick={() => navigate('/courses')}
+              className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="relative h-28 md:h-32 overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&q=80" 
+                  alt="Science"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="relative h-full p-2 md:p-3 flex flex-col justify-between text-white">
+                  <div className="w-7 h-7 md:w-8 md:h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                  </div>
+                  <p className="font-bold text-xs md:text-sm">Science</p>
+                </div>
+              </div>
+              <div className="p-2 bg-white">
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: '82%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Today's Study Plan */}
+        <div className="bg-white rounded-xl p-4 md:p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base md:text-lg font-bold text-gray-900">Today's Study Plan</h2>
+            <button 
+              onClick={() => navigate('/study-plan')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              View All →
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-sm">Mathematics - Algebra</p>
+                <p className="text-xs text-gray-500 mt-1">Quadratic Equations</p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="text-xs text-gray-400">9:00 AM - 10:00 AM</span>
+                  <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded">In Progress</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-sm">English - Grammar</p>
+                <p className="text-xs text-gray-500 mt-1">Tenses Practice</p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="text-xs text-gray-400">2:00 PM - 3:00 PM</span>
+                  <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">Scheduled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Achievements */}
+        <div className="bg-white rounded-xl p-4 md:p-6 border border-gray-200 shadow-sm">
+          <h2 className="text-base md:text-lg font-bold text-gray-900 mb-4">Achievements</h2>
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
+            {badges.map((badge, i) => {
+              const BadgeIcon = badge.icon;
+              return (
+                <div
+                  key={i}
+                  className={`flex flex-col items-center gap-2 p-3 md:p-4 rounded-lg border text-center transition-all
+                    ${badge.unlocked 
+                      ? 'bg-white border-gray-200 hover:shadow-md' 
+                      : 'bg-gray-50 border-gray-100 opacity-50'
+                    }`}
+                >
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center ${badge.unlocked ? badge.bg : 'bg-gray-100'}`}>
+                    <BadgeIcon className={`w-5 h-5 md:w-6 md:h-6 ${badge.unlocked ? badge.color : 'text-gray-400'}`} />
+                  </div>
+                  <p className="text-xs font-medium text-gray-700 leading-tight">{badge.name}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // MASTERY MODE (Ages 15-19) - Professional & Clean
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">Welcome back, {student.name}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-2 bg-gray-100 rounded-lg">
+            <span className="text-sm text-gray-600">Level</span>
+            <span className="ml-2 font-semibold text-gray-900">{student.level_number}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-white rounded-lg p-4 md:p-5 border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs md:text-sm text-gray-500">Total XP</span>
+            <Star className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-xl md:text-2xl font-semibold text-gray-900">{student.xp}</p>
+          <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
+            <div className="bg-gray-900 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <p className="text-xs text-gray-400 mt-2">{Math.round(progressPercent)}% to next level</p>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 md:p-5 border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs md:text-sm text-gray-500">Streak</span>
+            <Flame className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-xl md:text-2xl font-semibold text-gray-900">{student.streak} days</p>
+          <p className="text-xs text-gray-500 mt-3">Keep learning daily</p>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 md:p-5 border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs md:text-sm text-gray-500">Progress</span>
+            <Target className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-xl md:text-2xl font-semibold text-gray-900">{student.progress}%</p>
+          <p className="text-xs text-gray-500 mt-3">Overall completion</p>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 md:p-5 border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs md:text-sm text-gray-500">Attendance</span>
+            <BookOpen className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-xl md:text-2xl font-semibold text-gray-900">{student.attendance}%</p>
+          <p className="text-xs text-gray-500 mt-3">This month</p>
+        </div>
+      </div>
+
+      {/* Subjects */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
+        <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-4">My Subjects</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {/* Mathematics Card */}
+          <div
+            onClick={() => navigate('/courses')}
+            className="group cursor-pointer rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 transition-all"
+          >
+            <div className="relative h-40 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=500&q=80" 
+                alt="Mathematics"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+              />
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="relative h-full p-4 flex flex-col justify-between text-white">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/80" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Mathematics</h3>
+                  <p className="text-xs text-white/80">12 chapters • 45 topics</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-500">Progress</span>
+                <span className="text-sm font-semibold text-gray-900">75%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+                <div className="bg-gray-900 h-1.5 rounded-full" style={{ width: '75%' }} />
+              </div>
+              
+              {/* Weak Topics */}
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-orange-500" />
+                  <span className="text-xs font-medium text-gray-700">Areas to improve</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded border border-orange-200">
+                    Calculus
+                  </span>
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded border border-orange-200">
+                    Trigonometry
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* English Card */}
+          <div
+            onClick={() => navigate('/courses')}
+            className="group cursor-pointer rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 transition-all"
+          >
+            <div className="relative h-40 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=500&q=80" 
+                alt="English"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+              />
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="relative h-full p-4 flex flex-col justify-between text-white">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/80" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">English</h3>
+                  <p className="text-xs text-white/80">10 chapters • 38 topics</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-500">Progress</span>
+                <span className="text-sm font-semibold text-gray-900">60%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+                <div className="bg-gray-900 h-1.5 rounded-full" style={{ width: '60%' }} />
+              </div>
+              
+              {/* Weak Topics */}
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-orange-500" />
+                  <span className="text-xs font-medium text-gray-700">Areas to improve</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded border border-orange-200">
+                    Grammar
+                  </span>
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded border border-orange-200">
+                    Essay Writing
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Science Card */}
+          <div
+            onClick={() => navigate('/courses')}
+            className="group cursor-pointer rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 transition-all"
+          >
+            <div className="relative h-40 overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&q=80" 
+                alt="Science"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+              />
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="relative h-full p-4 flex flex-col justify-between text-white">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/80" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Science</h3>
+                  <p className="text-xs text-white/80">15 chapters • 52 topics</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-500">Progress</span>
+                <span className="text-sm font-semibold text-gray-900">82%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+                <div className="bg-gray-900 h-1.5 rounded-full" style={{ width: '82%' }} />
+              </div>
+              
+              {/* Weak Topics */}
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-orange-500" />
+                  <span className="text-xs font-medium text-gray-700">Areas to improve</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded border border-orange-200">
+                    Organic Chemistry
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Study Plan */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base md:text-lg font-semibold text-gray-900">Today's Study Plan</h2>
+          <button 
+            onClick={() => navigate('/study-plan')}
+            className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1"
+          >
+            View All <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-gray-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 text-sm">Mathematics - Calculus</p>
+              <p className="text-xs text-gray-500 mt-1">Chapter 5: Derivatives</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-gray-400">9:00 AM - 10:00 AM</span>
+                <span className="text-xs px-2 py-0.5 bg-gray-900 text-white rounded">In Progress</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-gray-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 text-sm">English - Literature</p>
+              <p className="text-xs text-gray-500 mt-1">Essay Writing Practice</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-gray-400">2:00 PM - 3:00 PM</span>
+                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">Scheduled</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-gray-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 text-sm">Science - Physics</p>
+              <p className="text-xs text-gray-500 mt-1">Newton's Laws of Motion</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-gray-400">4:00 PM - 5:00 PM</span>
+                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">Scheduled</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default StudentDashboard;

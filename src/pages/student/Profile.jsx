@@ -58,23 +58,23 @@ const Profile = () => {
       {/* Personal Info Card */}
       <Card>
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl sm:text-3xl font-bold text-blue-600">{student.name?.[0]}</span>
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+            <span className="text-2xl sm:text-3xl font-black text-blue-600">{student.name?.[0]}</span>
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{student.name}</h2>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">Class {student.class} - Age {student.age}</p>
-            <p className="text-gray-600 text-sm sm:text-base">Learning Mode: <span className="font-semibold capitalize">{student.level}</span></p>
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900">{student.name}</h2>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base font-semibold">Class {student.class} - Age {student.age}</p>
+            <p className="text-gray-600 text-sm sm:text-base">Learning Mode: <span className="font-bold capitalize text-blue-600">{student.level}</span></p>
             {mentor && (
-              <p className="text-gray-600 mt-2 text-sm sm:text-base">Mentor: <span className="font-semibold">{mentor.name}</span></p>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">Mentor: <span className="font-bold text-purple-600">{mentor.name}</span></p>
             )}
           </div>
-          <div className="text-center sm:text-right">
+          <div className="text-center sm:text-right bg-amber-50 rounded-2xl p-4 border-2 border-amber-200">
             <div className="flex items-center gap-2 mb-2 justify-center sm:justify-end">
-              <Award className="w-5 h-5 text-yellow-600" />
-              <span className="text-xl sm:text-2xl font-bold text-gray-900">Level {student.level_number}</span>
+              <Award className="w-5 h-5 text-amber-600" />
+              <span className="text-xl sm:text-2xl font-black text-gray-900">Level {student.level_number}</span>
             </div>
-            <p className="text-gray-600 text-sm">{student.xp} XP</p>
+            <p className="text-amber-600 text-sm font-bold">{student.xp} XP</p>
           </div>
         </div>
       </Card>
@@ -82,32 +82,40 @@ const Profile = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="w-4 h-4 text-blue-600" />
-            <p className="text-gray-500 text-xs sm:text-sm">Total XP</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Zap className="w-4 h-4 text-blue-600" />
+            </div>
+            <p className="text-gray-500 text-xs sm:text-sm font-semibold">Total XP</p>
           </div>
-          <p className="text-xl sm:text-3xl font-bold text-gray-900">{student.xp}</p>
+          <p className="text-xl sm:text-3xl font-black text-gray-900">{student.xp}</p>
         </Card>
         <Card>
-          <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4 text-green-600" />
-            <p className="text-gray-500 text-xs sm:text-sm">Progress</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <Target className="w-4 h-4 text-green-600" />
+            </div>
+            <p className="text-gray-500 text-xs sm:text-sm font-semibold">Progress</p>
           </div>
-          <p className="text-xl sm:text-3xl font-bold text-green-600">{completionRate}%</p>
+          <p className="text-xl sm:text-3xl font-black text-green-600">{completionRate}%</p>
         </Card>
         <Card>
-          <div className="flex items-center gap-2 mb-1">
-            <Flame className="w-4 h-4 text-orange-600" />
-            <p className="text-gray-500 text-xs sm:text-sm">Streak</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Flame className="w-4 h-4 text-orange-600" />
+            </div>
+            <p className="text-gray-500 text-xs sm:text-sm font-semibold">Streak</p>
           </div>
-          <p className="text-xl sm:text-3xl font-bold text-orange-600">{student.streak}d</p>
+          <p className="text-xl sm:text-3xl font-black text-orange-600">{student.streak}d</p>
         </Card>
         <Card>
-          <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="w-4 h-4 text-purple-600" />
-            <p className="text-gray-500 text-xs sm:text-sm">Quizzes</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-purple-600" />
+            </div>
+            <p className="text-gray-500 text-xs sm:text-sm font-semibold">Quizzes</p>
           </div>
-          <p className="text-xl sm:text-3xl font-bold text-purple-600">{quizHistory.length}</p>
+          <p className="text-xl sm:text-3xl font-black text-purple-600">{quizHistory.length}</p>
         </Card>
       </div>
 
