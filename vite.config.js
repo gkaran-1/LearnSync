@@ -46,7 +46,7 @@ export default defineConfig({
   plugins: [react(), ttsProxyPlugin()],
   build: {
     target: 'esnext',
-    minify: 'terser',
+    minify: 'esbuild',
     sourcemap: false,
     chunkSizeWarningLimit: 1000
   },
